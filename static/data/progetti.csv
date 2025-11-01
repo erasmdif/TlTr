@@ -1,0 +1,36 @@
+progetto,sottotitolo,categoria,completo,link
+map_tagger,,"GIS,utility,marcatura,mio",sni,https://erasmdif.github.io/map_picker/
+MyMiTo,Mycenean & Minoan Tombs (demo PhD),"GIS,statistica,archeologia,mio",no,https://erasmdif.github.io/MyMiTo/
+Arborea,,"GIS,archeobotanica,archeologia,mio",sni,https://arborea-s-home.github.io/arborea_main_site/
+Brollo’s index,,"linguistica,utility,mio",sni,https://erasmdif.github.io/explore_chinese_indexing/
+Tag with Brollo,,"linguistica,utility,mio",si,https://erasmdif.github.io/tag_with_brollo/
+Italian Lily,,"GIS,storia,mio",si,https://italianlily.lad-sapienza.it/
+Annotorius,,"utility,marcatura",si,https://annotorious.dev/
+Scms,,"utility,web CMS",si,https://github.com/lad-sapienza/sCMS
+TlTTT,To lazy To Translate&Tag,"automatation,linguistica,ML/AI,mio",no,
+Catch/me-nator!,,"GIS,automation,ML/AI,mio",no,https://github.com/erasmdif/Catch-me-nator-/tree/main
+Pypottery,,"archeologia,ML/AI,automation",si,https://github.com/lrncrd/PyPotteryLens
+Reconstruction Pots,,"archeologia,ML/AI,automation",si,https://github.com/lrncrd/ReconstructionPots
+PypotteryInk,,"archeologia,ML/AI,automation",si,https://github.com/lrncrd/PyPotteryInk
+CeraLoop,,altro,si,https://github.com/lad-sapienza/ceraloop
+Directus,headless dbms,"utility,DMBS",si,https://directus.io/
+Directus-zotero,,"utility,bibliografia",si,https://github.com/lad-sapienza/directus-extension-zotero-sync
+zotero,,"utility,bibliografia",si,https://www.zotero.org/
+Canva,,"utility,presentazione",si,https://www.canva.com/templates
+Github,,"utility,repository",si,https://github.com/
+ede_interpolation,QGIS 3 plugin for spatio-temporal interpolation of archaeological settlement evidence.,"utility,archeologia",si,https://github.com/demjanp/ede_interpolation
+Recogito (Pelagios),,,,
+Arches Project,,,,
+OpenAtlas,,,,
+Palladio (Stanford),,,,
+Transkribus,,,,
+Omeka,,,,
+Europeana,,,,
+Heurist,,,,
+Gephi,,,,
+PAST (Palaeontological Statistics),,,,
+Tropy,,,,
+Voyant Tools,,,,
+nodegoat,,,,
+SEAD (Strategic Environmental Archaeology Database),,,,
+OpenRefine,,,,

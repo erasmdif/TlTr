@@ -1,0 +1,10 @@
+{
+"type": "FeatureCollection",
+"name": "luoghi_1",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { "id": null, "indirizzo": "Str. Santa Teresa dei Maschi, 26, 70122 Bari BA", "nome": "Santa Teresa dei Maschi dell’Università di Bari" }, "geometry": { "type": "Point", "coordinates": [ 16.870429921666918, 41.127653966872231 ] } },
+{ "type": "Feature", "properties": { "id": null, "indirizzo": "Via Monteoliveto 3, Napoli", "nome": "Palazzo Gravina" }, "geometry": { "type": "Point", "coordinates": [ 14.251206791361842, 40.845183331092016 ] } },
+{ "type": "Feature", "properties": { "id": null, "indirizzo": "Via Ostiense, 234, 00146 Roma RM", "nome": "Dipartimento di Studi Umanistici - Aula Magna e Foyerc (Roma Tre)" }, "geometry": { "type": "Point", "coordinates": [ 12.475348713389611, 41.850677230471788 ] } }
+]
+}

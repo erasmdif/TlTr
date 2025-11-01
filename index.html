@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>TlTr — To Lazy To Remember</title>
+
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <!-- HEADER / BANNER -->
+  <header class="site-header">
+    <div class="brand">
+      <img src="./static/images/logo.png" alt="TlTr logo" class="brand__logo" />
+      <div class="brand__text">
+        <div class="brand__sigla">TlTr</div>
+        <div class="brand__full">To Lazy To Remember</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- SPEED DIAL (sinistra) -->
+  <div class="speed-dial" id="speedDial" aria-label="Apri menu rapido">
+    <button class="speed-dial__main" id="sdMain" title="Apri strumenti rapidi">
+      <img src="./static/images/icons/nota.png" alt="nota" />
+    </button>
+    <div class="speed-dial__fan" id="sdFan">
+      <button class="speed-item" data-key="code" title="Code">
+        <img src="./static/images/icons/code.png" alt="code" />
+        <span class="speed-caption speed-caption--code">code</span>
+      </button>
+      <button class="speed-item" data-key="write" title="Write">
+        <img src="./static/images/icons/write.png" alt="write" />
+        <span class="speed-caption speed-caption--write">write</span>
+      </button>
+      <button class="speed-item" data-key="just_chill" title="Just chill">
+        <img src="./static/images/icons/just_chill.png" alt="just_chill" />
+        <span class="speed-caption speed-caption--chill">just_chill</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- LAYOUT -->
+  <div class="layout">
+    <main class="main">
+      <!-- ACCORDION: DOCUMENTAZIONE -->
+      <details open class="accordion">
+        <summary class="accordion__title">Documentazione</summary>
+        <div class="accordion__content">
+          <div class="modules-grid" id="modulesGrid">
+            <!-- Modulo A -->
+            <article class="module-card">
+              <button class="doc-button" data-modkey="A" title="Scarica Modulo A">
+                <span class="doc-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Scarica Modulo A</span>
+              </button>
+              <div class="module-caption">
+                <div class="module-title">Modulo A</div>
+                <div class="module-sub">Richiesta di autorizzazione preventiva</div>
+                <button class="info-btn" data-module="A" aria-label="Info Modulo A">i</button>
+              </div>
+            </article>
+
+            <!-- Modulo R -->
+            <article class="module-card">
+              <button class="doc-button" data-modkey="R" title="Scarica Modulo R">
+                <span class="doc-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Scarica Modulo R</span>
+              </button>
+              <div class="module-caption">
+                <div class="module-title">Modulo R</div>
+                <div class="module-sub">Dati personali e sulla missione</div>
+                <button class="info-btn" data-module="R" aria-label="Info Modulo R">i</button>
+              </div>
+            </article>
+
+            <!-- Modulo B -->
+            <article class="module-card">
+              <button class="doc-button" data-modkey="B" title="Scarica Modulo B">
+                <span class="doc-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Scarica Modulo B</span>
+              </button>
+              <div class="module-caption">
+                <div class="module-title">Modulo B</div>
+                <div class="module-sub">Rendicontazione a rientro</div>
+                <button class="info-btn" data-module="B" aria-label="Info Modulo B">i</button>
+              </div>
+            </article>
+
+            <!-- Modulo S -->
+            <article class="module-card">
+              <button class="doc-button" data-modkey="S" title="Scarica Modulo S">
+                <span class="doc-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Scarica Modulo S</span>
+              </button>
+              <div class="module-caption">
+                <div class="module-title">Modulo S</div>
+                <div class="module-sub">Attestazione sede di servizio</div>
+                <button class="info-btn" data-module="S" aria-label="Info Modulo S">i</button>
+              </div>
+            </article>
+          </div>
+        </div>
+      </details>
+
+      <!-- ACCORDION: LOGHI -->
+      <details class="accordion">
+        <summary class="accordion__title">Loghi utili</summary>
+        <div class="accordion__content">
+          <div class="logos-toolbar">
+            <input type="search" id="logosSearch" placeholder="Cerca istituzione…" />
+            <div class="logos-nav">
+              <button id="logosPrev">‹</button>
+              <span id="logosCount" class="small"></span>
+              <button id="logosNext">›</button>
+            </div>
+          </div>
+          <div class="logos-grid" id="logosGrid"></div>
+        </div>
+      </details>
+
+      <!-- ACCORDION: PROGETTI UTILI -->
+      <details class="accordion accordion--projects">
+        <summary class="accordion__title">Progetti utili</summary>
+        <div class="accordion__content">
+          <div class="projects-toolbar" id="projectsToolbar"></div>
+          <div class="projects-grid" id="projectsGrid"></div>
+        </div>
+      </details>
+    </main>
+
+    <!-- SIDEBAR: CALENDARIO / MAPPA -->
+    <aside class="sidebar">
+      <section class="calendar-section">
+        <div class="calendar-head">
+          <div class="month-nav">
+            <button id="prevMonth" aria-label="Mese precedente">‹</button>
+            <div id="monthLabel"></div>
+            <button id="nextMonth" aria-label="Mese successivo">›</button>
+          </div>
+          <div class="segmented" role="tablist" aria-label="Vista">
+            <button id="btnViewCalendar" class="segmented__btn is-active" role="tab" aria-selected="true">Calendario</button>
+            <button id="btnViewMap" class="segmented__btn" role="tab" aria-selected="false">Mappa</button>
+          </div>
+        </div>
+
+        <div class="calendar-legend">
+          <span>Eventi da <code>static/data/eventi.csv</code></span>
+          <span class="legend-dot legend-red"></span><small>presenza: si</small>
+          <span class="legend-dot legend-blue"></span><small>presenza: preferibile</small>
+          <span class="legend-dot legend-green"></span><small>presenza: no</small>
+        </div>
+
+        <div class="calendar-grid" id="calendarGrid"></div>
+
+        <div class="calendar-map-wrap" id="calendarMapWrap" hidden>
+          <div id="calendarMap"></div>
+        </div>
+      </section>
+    </aside>
+  </div>
+
+  <!-- MODALE INFO MODULI -->
+  <dialog id="moduleInfoDialog" class="modal">
+    <div class="modal__content">
+      <button class="modal__close" data-close>&times;</button>
+      <h3 id="moduleInfoTitle" class="modal-title"></h3>
+
+     <div id="moduleFixedNotice" class="module-fixed-notice">
+         ❗ La documentazione va inoltrata entro 10 giorni dalla partenza
+     </div>
+
+      <details class="info-accordion" open>
+        <summary>Indicazioni specifiche</summary>
+        <div id="moduleInfoBody" class="info-text"></div>
+      </details>
+
+      <details class="info-accordion">
+        <summary>Note generali</summary>
+        <div id="generalNotes" class="info-text"></div>
+      </details>
+
+      <!-- NUOVO: sedi convenzionate da enti.csv con sedi valorizzate -->
+      <details class="info-accordion" id="accConvenzionate">
+        <summary>Sedi convenzionate</summary>
+        <div>
+          <div class="enti-grid" id="entiConvenzionate"></div>
+        </div>
+      </details>
+    </div>
+  </dialog>
+
+  <!-- MODALE DETTAGLIO EVENTO -->
+  <dialog id="eventDialog" class="modal modal--wide">
+    <div class="modal__content">
+      <button class="modal__close" data-close>&times;</button>
+      <div id="eventBody" class="event-body"></div>
+    </div>
+  </dialog>
+
+  <!-- MINI PLAYER (dock) -->
+  <div id="musicDock" class="music-dock" hidden>
+    <button id="musicClose" class="music-close" aria-label="Chiudi">×</button>
+    <iframe id="musicFrame" title="Player" frameborder="0"
+      allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+  </div>
+
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
+  <script src="./app.js"></script>
+</body>
+</html>
