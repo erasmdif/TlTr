@@ -87,7 +87,7 @@ function renderConvenzionateAccordion(){
 
 /* ---------- MODULI ---------- */
 const MOD_FILENAME={A:"Modulo_A.txt",R:"Modulo_R.txt",B:"Modulo_B.txt",S:"Modulo_S.txt"};
-const MODULE_FILES={A:["modulo_A.dotx"],R:["modulo_R.dotx","modulo_Rdotx"],B:["modulo_B.dotx"],S:["modulo_S.dotx"]};
+const MODULE_FILES={A:["modulo_A.docx"],R:["modulo_R.dotx","modulo_Rdotx"],B:["modulo_B.dotx"],S:["modulo_S.dotx"]};
 
 async function loadTxt(u){ const r=await fetch(u,{cache:"no-store"}); if(!r.ok) throw 0; return r.text(); }
 
