@@ -154,6 +154,16 @@ function setupLoghiUtili(){
   logosFiltered=[...ENTI]; render();
 }
 
+// --- Costruttore "banda loghi"
+const bannerBtn = document.getElementById("buildLogosBannerBtn");
+if (bannerBtn) {
+  bannerBtn.addEventListener("click", () => {
+    // passiamo SOLO il necessario al componente
+    const logos = ENTI.map(e => ({ name: e.istituzione, file: e.logo }));
+    window.LogoBannerBuilder?.open(logos, { base: ASSETS.logosBase });
+  });
+}
+
 /* ---------- CALENDARIO / GEODATI ---------- */
 function parseMDY2Y(s){ if(!s) return null; const [m,d,yRaw]=s.split("/").map(x=>x?.trim()); let y=(yRaw||"").length===2?(+yRaw<=49?2000+ +yRaw:1900+ +yRaw):+yRaw; if(!m||!d||!y) return null; const dt=new Date(Date.UTC(y,+m-1,+d)); return isNaN(+dt)?null:dt; }
 const dateKeyUTC=d=>d.toISOString().slice(0,10);

@@ -113,14 +113,23 @@
       <details class="accordion">
         <summary class="accordion__title">Loghi utili</summary>
         <div class="accordion__content">
+
+          <!-- Pulsante: crea banda loghi -->
+          <div class="section-head with-action" style="margin-bottom:8px;">
+            <button id="buildLogosBannerBtn" class="btn btn-primary btn-sm" type="button">
+              Crea banda loghi
+            </button>
+          </div>
+
           <div class="logos-toolbar">
             <input type="search" id="logosSearch" placeholder="Cerca istituzione…" />
             <div class="logos-nav">
-              <button id="logosPrev">‹</button>
+              <button id="logosPrev" type="button">‹</button>
               <span id="logosCount" class="small"></span>
-              <button id="logosNext">›</button>
+              <button id="logosNext" type="button">›</button>
             </div>
           </div>
+
           <div class="logos-grid" id="logosGrid"></div>
         </div>
       </details>
@@ -217,5 +226,6 @@
     crossorigin=""
   ></script>
   <script src="./app.js"></script>
+  <script src="./banner_maker.js"></script>
 </body>
 </html>
