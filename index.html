@@ -49,8 +49,13 @@
   <!-- LAYOUT -->
   <div class="layout">
     <main class="main">
+      <!-- AVVISI & PROMEMORIA (warning, testo da file) -->
+      <details class="warn-accordion">
+        <summary>⚠️ Avvisi & promemoria</summary>
+        <div class="warn-content" id="homepageWarn"></div>
+      </details>
       <!-- ACCORDION: DOCUMENTAZIONE -->
-      <details open class="accordion">
+      <details class="accordion">
         <summary class="accordion__title">Documentazione</summary>
         <div class="accordion__content">
           <div class="modules-grid" id="modulesGrid">
@@ -185,12 +190,12 @@
          ❗ La documentazione va inoltrata entro 10 giorni dalla partenza
      </div>
 
-      <details class="info-accordion" open>
+      <details class="info-accordion">
         <summary>Indicazioni specifiche</summary>
         <div id="moduleInfoBody" class="info-text"></div>
       </details>
 
-      <details class="info-accordion">
+      <details class="info-accordion" id="accGeneralNotes">
         <summary>Note generali</summary>
         <div id="generalNotes" class="info-text"></div>
       </details>

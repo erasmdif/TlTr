@@ -14,6 +14,15 @@ Date da inserire nella missione: riguardano l'arrivo e partenza e non le date ef
 2.	Dopo la missione:
         o	Compilare e inviare il Modulo B con tutta la documentazione giustificativa
 
+
+3. la sede di afferenza è determinata dalla borsa (chi ha UniBa, ad esempio, viene da Bari).
+
+Per cui, per chi parte da un luogo diverso, è necessario giustificare il rimborso tramite screen che dimostrino che il viaggio risultava più conveniente rispetto alla sede di appartenenza. Es:
+
+ "convegno a Roma" --> Se si parte da Firenze, si deve allegare screen in cui si mostra che il biglietto Firenze-Roma è meno costoso rispetto al biglietto Bari-Roma, altrimenti non sarà accettato il rimborso.
+
+ Non è chiaro se la compilazione del modulo S "annulli" questa dinamica
+
 ______________
 
 

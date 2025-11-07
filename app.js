@@ -63,6 +63,135 @@ function formatInfoText(raw){
   close(); return out.join("");
 }
 
+/* Mini-markup: **bold**, !!mark!!, [txt](url), email, [[modA|label]] */
+function enhanceInline(raw){
+  if(!raw) return "";
+  let s = raw;
+
+  // grassetto
+  s = s.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+
+  // evidenza arancione
+  s = s.replace(/!!(.+?)!!/g, '<span class="warn-mark">$1</span>');
+
+  // markdown link [testo](url)
+  s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+
+  // email -> mailto (evita di rompere link già creati)
+  s = s.replace(/(^|[\s(])([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})(?=[\s),]|$)/g,
+                '$1<a href="mailto:$2">$2</a>');
+
+  // azione: apri Info Modulo A (Note generali)
+  s = s.replace(/\[\[modA(?:\|([^\]]+))?\]\]/gi,
+                (_,label)=>`<a href="#" data-open="modA_general">${label||"vedi Info Modulo A"}</a>`);
+
+  return s;
+}
+
+/* Carica /static/moduli/info/info_homepage.txt e renderizza nell’accordion */
+function buildCollapsibleWarnList(raw){
+  const lines = (raw||"").replace(/\r\n/g,"\n").split("\n");
+  const groups = [];
+  let cur = null;
+
+  const push = ()=>{ if(cur){ groups.push(cur); cur=null; } };
+  const startNew = (text)=>{ 
+    cur = { summary: text, body: [], seenBlank:false, bodyHadNonDash:false };
+  };
+
+  for (let i=0;i<lines.length;i++){
+    const Lraw = lines[i];
+    const L = Lraw.trim();
+
+    // bullet
+    if (/^-\s+/.test(L)) {
+      const text = L.replace(/^-+\s+/, '').trim();
+
+      if (!cur) { startNew(text); continue; }
+
+      if (cur.seenBlank) {
+        const summaryEndsWithColon = /[:：]\s*$/.test(cur.summary);
+        // Sotto-elenco SOLO se il punto finisce con ":" e non abbiamo ancora testo non-dash nel body
+        if (summaryEndsWithColon && !cur.bodyHadNonDash) {
+          cur.body.push(Lraw);           // resta come "-" per formatInfoText -> <ul><li>...
+        } else {
+          push(); startNew(text);        // nuovo top-level
+        }
+      } else {
+        // nuovo top-level (nessun capoverso tra i due)
+        push(); startNew(text);
+      }
+      continue;
+    }
+
+    // blank line
+    if (L === "") {
+      if (cur) cur.seenBlank = true;
+      continue;
+    }
+
+    // testo normale
+    if (cur) {
+      if (!cur.seenBlank) {
+        // estende il riassunto prima del capoverso
+        cur.summary += " " + L;
+      } else {
+        cur.body.push(Lraw);
+        if (!/^\s*-\s+/.test(L)) cur.bodyHadNonDash = true;  // segnala presenza di contenuto non elenco
+      }
+    } else {
+      startNew(L);
+    }
+  }
+  push();
+
+  // render
+  const ul = document.createElement("ul");
+  ul.className = "warn-list";
+  for (const g of groups) {
+    const li = document.createElement("li");
+    const hasBody = g.body.join("\n").trim().length > 0;
+
+    if (hasBody) {
+      li.className = "li-collapsible";
+      const det = document.createElement("details"); // chiuso di default
+      const sum = document.createElement("summary");
+      sum.innerHTML = enhanceInline(g.summary);
+
+      const wrap = document.createElement("div");
+      wrap.className = "li-content";
+      wrap.innerHTML = formatInfoText(enhanceInline(g.body.join("\n")));
+
+      det.append(sum, wrap);
+      li.appendChild(det);
+    } else {
+      li.innerHTML = enhanceInline(g.summary);
+    }
+    ul.appendChild(li);
+  }
+  return ul;
+}
+
+async function renderHomepageWarnings(){
+  const box = $("#homepageWarn"); if(!box) return;
+  try{
+    const raw = await loadTxt(ASSETS.infoBase + "info_homepage.txt");
+    const ul = buildCollapsibleWarnList(raw);
+    box.innerHTML = "";
+    box.appendChild(ul);
+
+    // azione speciale [[modA|...]]
+    box.querySelectorAll('[data-open="modA_general"]').forEach(a=>{
+      a.addEventListener("click",(e)=>{
+        e.preventDefault();
+        openModuleInfoByKey("A", { focusGeneral: true });
+      });
+    });
+  }catch{
+    box.textContent = "—";
+  }
+}
+
 /* ---------- ENTI / ISTITUZIONI (loghi, convenzionate) ---------- */
 let ENTI=[];
 async function loadEnti(){
@@ -91,7 +220,7 @@ const MODULE_FILES={A:["modulo_A.docx"],R:["modulo_R.dotx","modulo_Rdotx"],B:["m
 
 async function loadTxt(u){ const r=await fetch(u,{cache:"no-store"}); if(!r.ok) throw 0; return r.text(); }
 
-async function openModuleInfoByKey(k){
+async function openModuleInfoByKey(k, opts = {}){
   const title={A:"Modulo A – Richiesta di autorizzazione preventiva",R:"Modulo R – Dati personali e sulla missione",B:"Modulo B – Rendicontazione a rientro",S:"Modulo S – Attestazione sede di servizio"}[k]||"Informazioni";
   $("#moduleInfoTitle").textContent=title;
   try{
@@ -103,7 +232,18 @@ async function openModuleInfoByKey(k){
   }
   renderConvenzionateAccordion();
   openDialog($("#moduleInfoDialog"));
+
+    if (opts.focusGeneral) {
+    const det = document.getElementById("accGeneralNotes");
+    if (det) {
+      det.open = true;
+      det.classList.add("flash");
+      setTimeout(()=>det.classList.remove("flash"), 1200);
+      det.scrollIntoView({ behavior:"smooth", block:"start" });
+    }
+  }
 }
+
 async function downloadModuleByKey(k){
   for(const u of (MODULE_FILES[k]||[]).map(f=>ASSETS.moduliBase+f)){
     try{ const h=await fetch(u,{method:"HEAD",cache:"no-store"}); if(h.ok){ const a=document.createElement("a"); a.href=u; a.download=""; document.body.appendChild(a); a.click(); a.remove(); return; } }catch{}
@@ -175,17 +315,18 @@ let CURRENT_MONTH=(()=>{ const n=new Date(); return new Date(Date.UTC(n.getUTCFu
 async function loadEventi(){
   const csv=await fetch(ASSETS.eventi,{cache:"no-store"}).then(r=>r.text());
   const rows=parseCSV(csv);
-  EVENTS=rows.map(r=>{
-    const from=parseMDY2Y(r.date_from), to=parseMDY2Y(r.date_to)||from;
+  EVENTS = rows.map(r=>{
+    const from = parseMDY2Y(r.date_from), to = parseMDY2Y(r.date_to) || from;
     return {
       ...r,
-      evento:r.evento||"Evento",
-      tipo:(r.tipo||"evento").toLowerCase(),
-      presenza:(r.presenza||"").toLowerCase(),
-      orario_inizio:(r.orario_inizio||"").trim(),
-      orario_fine:(r.orario_fine||"").trim(),
-      città:(r.città||"").trim(),
-      luogo:(r.luogo||"").trim(),
+      evento: (r.evento || "Evento"),
+      tipo: (r.tipo || "evento").toLowerCase(),
+      presenza: (r.presenza || "").toLowerCase(),
+      orario_inizio: (r.orario_inizio || "").trim(),
+      orario_fine: (r.orario_fine || "").trim(),
+      città: (r.città || "").trim(),
+      luogo: (r.luogo || "").trim(),
+      note: (r.note || "").trim(),
       from, to
     };
   });
@@ -298,6 +439,15 @@ function buildEventBody(ev,alsoList){
     const pr=document.createElement("div"); pr.className="preview";
     pr.innerHTML=`<div class="preview-title">Link utili</div><div class="actions"><a class="btn btn-info" target="_blank" rel="noopener" href="${ev.link_utili}"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Z"/></svg>Apri link</a></div>`;
     docs.appendChild(pr);
+  }
+  if (ev.note) {
+    const nb = document.createElement("div");
+    nb.className = "preview preview--note";
+    nb.innerHTML = `
+      <div class="preview-title">Note</div>
+      <div class="note-body">${formatInfoText(ev.note)}</div>
+    `;
+    docs.appendChild(nb);
   }
   if(!docs.children.length){ const empty=document.createElement("div"); empty.className="small"; empty.textContent="Nessuna anteprima disponibile."; docs.appendChild(empty); }
   right.appendChild(docs);
@@ -706,6 +856,8 @@ async function boot(){
   setupModules();
   setupCalendarNav();
   setupSpeedDial();
+
+  await renderHomepageWarnings();
 
   await loadEnti();
   setupLoghiUtili();

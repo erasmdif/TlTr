@@ -259,3 +259,77 @@ body{
   .lb-acc__count{color:#9aaac4}
   #logoBannerDialog .lb__footer{background:linear-gradient(#101217,#101217);border-top-color:#1e2635}
 }
+/* --- Event notes (box arancione) --- */
+.preview--note{
+  background: linear-gradient(180deg,#fff8ef,#fff3e0);
+  border-color: #ffd6a8;
+}
+.preview--note .preview-title{ color:#8a4b00; }
+.note-body{
+  font-size:.95rem;
+  line-height:1.45;
+  color:#6a3d00;
+}
+.note-body ul, .note-body ol{ margin:6px 0 8px 18px; }
+
+@media (prefers-color-scheme: dark){
+  .preview--note{
+    background: linear-gradient(180deg,#3b2f24,#3b2a2f);
+    border-color:#6a4a2f;
+  }
+  .preview--note .preview-title{ color:#ffcf8a; }
+  .note-body{ color:#ffd6a8; }
+}
+/* ---------- AVVISI (warning accordion) ---------- */
+.warn-accordion{
+  border:1px solid #ffd6a8;
+  border-radius:12px;
+  background:linear-gradient(180deg,#fff8ef,#fff3e0);
+  margin:10px 0 16px;
+}
+.warn-accordion>summary{
+  list-style:none; cursor:pointer; font-weight:900;
+  padding:12px 14px; color:#8a4b00;
+  border-bottom:1px solid #ffe3c2;
+  background:linear-gradient(180deg,#fff,#fff7ee);
+}
+.warn-content{ padding:12px 14px; color:#6a3d00; }
+.warn-content a{ color:#8a4b00; text-decoration:underline dashed; }
+
+.flash{ animation:flashRing 1.2s ease-out 1; box-shadow:0 0 0 0 rgba(255,166,64,.55); }
+@keyframes flashRing{ 0%{box-shadow:0 0 0 0 rgba(255,166,64,.55);} 100%{box-shadow:0 0 0 10px rgba(255,166,64,0);} }
+
+.warn-mark{ background:#ffd9b2; padding:0 .2em; border-radius:.25em; }
+
+/* elenchi “puliti” dentro gli avvisi */
+.warn-content ul{ margin:8px 0 6px 18px; }
+.warn-content ol{ margin:8px 0 6px 18px; }
+.warn-content li{ margin:6px 0; }
+
+@media (prefers-color-scheme: dark){
+  .warn-accordion{ background:linear-gradient(180deg,#3b2f24,#3b2a2f); border-color:#6a4a2f; }
+  .warn-accordion>summary{ color:#ffcf8a; border-bottom-color:#6a4a2f; background:linear-gradient(180deg,#2f2620,#3a2e26); }
+  .warn-content{ color:#ffd6a8; }
+  .warn-mark{ background:#6a4a2f; }
+}
+/* Elenco avvisi con punti apribili */
+.warn-content .warn-list{ margin:8px 0 6px 18px; padding:0; }
+.warn-content .warn-list>li{ margin:8px 0; }
+
+.warn-content .li-collapsible details>summary{
+  list-style:none; cursor:pointer; display:flex; align-items:center; gap:6px;
+  padding:4px 0;
+}
+.warn-content .li-collapsible details>summary::after{
+  content:"▸"; margin-left:6px; font-size:.9em; opacity:.7; transition:transform .15s ease;
+}
+.warn-content .li-collapsible details[open]>summary::after{
+  content:"▾"; transform:translateY(-1px);
+}
+.warn-content .li-content{ margin-top:6px; padding-left:0; }
+.warn-content .li-content ul{ margin-left:18px; }
+.warn-content .li-content ol{ margin-left:18px; }
+
+@media (prefers-color-scheme: dark){
+  .warn-content .li-collapsible details>summary::after{ opacity:.85; }
+}
