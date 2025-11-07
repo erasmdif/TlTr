@@ -99,6 +99,68 @@ function enhanceInline(raw){
   return s;
 }
 
+/* --- NOTE: preview 400 char + dialog completo --- */
+function ensureNoteDialog(){
+  let dlg = document.getElementById("noteDialog");
+  if (!dlg) {
+    dlg = document.createElement("dialog");
+    dlg.id = "noteDialog";
+    dlg.innerHTML = `
+      <form method="dialog" class="dialog note-dialog">
+        <header class="dialog__header">
+          <h3 id="noteTitle">Nota</h3>
+        </header>
+        <article id="noteContent" class="dialog__body"></article>
+        <footer class="dialog__footer">
+          <button class="btn" data-close type="submit">Chiudi</button>
+        </footer>
+      </form>`;
+    document.body.appendChild(dlg);
+    // riusa il wiring dei bottoni [data-close]
+    closeOnButtons();
+  }
+  return dlg;
+}
+function openNoteDialog(title, html){
+  const dlg = ensureNoteDialog();
+  $("#noteTitle", dlg).textContent = title || "Nota";
+  $("#noteContent", dlg).innerHTML = html || "";
+  // abilita eventuali link speciali nel testo completo (es. [[modA|...]])
+  dlg.querySelectorAll('[data-open="modA_general"]').forEach(a=>{
+    a.addEventListener("click",(e)=>{
+      e.preventDefault();
+      openModuleInfoByKey("A", { focusGeneral: true });
+    });
+  });
+  openDialog(dlg);
+}
+
+/* Troncamento “gentile” per preview (evita di spezzare parole) */
+/* Troncamento che preserva i capoversi (senza puntini) */
+function truncateForPreview(raw, limit = 400){
+  if (!raw) return { html: "", truncated: false };
+
+  // preservo i \n; normalizzo solo CRLF -> LF
+  const s = raw.replace(/\r\n/g, "\n");
+
+  if (s.length <= limit) {
+    return { html: formatInfoText(enhanceInline(s)), truncated: false };
+  }
+
+  // taglio "gentile": arretra fino a uno spazio o newline
+  let cutIndex = limit;
+  while (cutIndex > 0 && !/\s/.test(s[cutIndex])) cutIndex--;
+  if (cutIndex === 0) cutIndex = limit;
+
+  // tengo i capoversi; riduco solo i blocchi di >2 righe vuote
+  const head = s.slice(0, cutIndex).replace(/\n{3,}/g, "\n\n");
+
+  return {
+    html: formatInfoText(enhanceInline(head)),
+    truncated: true
+  };
+}
+
 /* Carica /static/moduli/info/info_homepage.txt e renderizza nell’accordion */
 function buildCollapsibleWarnList(raw){
   const lines = (raw||"").replace(/\r\n/g,"\n").split("\n");
@@ -456,8 +518,31 @@ function buildEventBody(ev,alsoList){
     nb.className = "preview preview--note";
     nb.innerHTML = `
       <div class="preview-title">Note</div>
-      <div class="note-body">${formatInfoText(ev.note)}</div>
+      <div class="note-body"></div>
     `;
+    const body = nb.querySelector(".note-body");
+
+    const { html, truncated } = truncateForPreview(ev.note, 400);
+    body.innerHTML = html;
+
+    if (truncated) {
+      // barra azioni in basso a destra
+      const actions = document.createElement("div");
+      actions.className = "note-actions";
+      actions.style.cssText = "display:flex; justify-content:flex-end; margin-top:6px;";
+
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "btn btn-info note-more-btn";
+      btn.textContent = "Apri messaggio completo";
+      btn.addEventListener("click", () => {
+        openNoteDialog("Nota", formatInfoText(enhanceInline(ev.note)));
+      });
+
+      actions.appendChild(btn);
+      nb.appendChild(actions);
+    }
+
     docs.appendChild(nb);
   }
   if(!docs.children.length){ const empty=document.createElement("div"); empty.className="small"; empty.textContent="Nessuna anteprima disponibile."; docs.appendChild(empty); }

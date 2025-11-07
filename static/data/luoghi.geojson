@@ -6,6 +6,7 @@
 { "type": "Feature", "properties": { "id": null, "indirizzo": "Str. Santa Teresa dei Maschi, 26, 70122 Bari BA", "nome": "Santa Teresa dei Maschi dell’Università di Bari" }, "geometry": { "type": "Point", "coordinates": [ 16.870429921666918, 41.127653966872231 ] } },
 { "type": "Feature", "properties": { "id": null, "indirizzo": "Via Monteoliveto 3, Napoli", "nome": "Palazzo Gravina" }, "geometry": { "type": "Point", "coordinates": [ 14.251206791361842, 40.845183331092016 ] } },
 { "type": "Feature", "properties": { "id": null, "indirizzo": "Via Ostiense, 234, 00146 Roma RM", "nome": "Dipartimento di Studi Umanistici - Aula Magna e Foyerc (Roma Tre)" }, "geometry": { "type": "Point", "coordinates": [ 12.475348713389611, 41.850677230471788 ] } },
-{ "type": "Feature", "properties": { "id": null, "indirizzo": "Via del Porto Fluviale, 5/F, 00154 Roma", "nome": "Ristorante Angelina al Porto Fluviale" }, "geometry": { "type": "Point", "coordinates": [ 12.479284211661163, 41.872312502914546 ] } }
+{ "type": "Feature", "properties": { "id": null, "indirizzo": "Via del Porto Fluviale, 5/F, 00154 Roma", "nome": "Ristorante Angelina al Porto Fluviale" }, "geometry": { "type": "Point", "coordinates": [ 12.479284211661163, 41.872312502914546 ] } },
+{ "type": "Feature", "properties": { "id": null, "indirizzo": "Piazza San Domenico Maggiore", "nome": "Palazzo Petrucci Pizzeria" }, "geometry": { "type": "Point", "coordinates": [ 14.254561206259252, 40.848546406701139 ] } }
 ]
 }
