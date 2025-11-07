@@ -4,7 +4,7 @@
 const ASSETS = {
   eventi:"./static/data/eventi.csv",
   comuni:"./static/data/comuni.geojson",
-  luoghi:"./static/data/luoghi.geojson",          // NEW
+  luoghi:"./static/data/luoghi.geojson",
   progetti:"./static/data/progetti.csv",
   enti:"./static/data/istituzioni.csv",
   moduliBase:"./static/moduli/",
@@ -12,12 +12,31 @@ const ASSETS = {
   projectsImgBase:"./static/images/projects/",
   iconsBase:"./static/images/icons/",
   infoBase:"./static/moduli/info/",
-  erasmoLogo:"./static/images/logo_erasmo.svg"   // <— NEW
+  erasmoLogo:"./static/images/logo_erasmo.svg"
 };
 
+/* ---------- Versioning & preconnect ---------- */
+const APP_VERSION = "2025-11-07";
+const ver = (u) => u + (u.includes("?") ? "&" : "?") + "v=" + APP_VERSION;
+
+(function preconnectTiles(){
+  const hosts = [
+    "https://a.tile.openstreetmap.org",
+    "https://b.tile.openstreetmap.org",
+    "https://c.tile.openstreetmap.org"
+  ];
+  hosts.forEach(h=>{
+    const p=document.createElement("link"); p.rel="preconnect"; p.href=h; p.crossOrigin="";
+    const d=document.createElement("link"); d.rel="dns-prefetch"; d.href=h;
+    document.head.appendChild(d); document.head.appendChild(p);
+  });
+})();
+
+/* ---------- Costanti calendario ---------- */
 const IT_MONTHS=["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
 const IT_DOW=["Lun","Mar","Mer","Gio","Ven","Sab","Dom"];
 
+/* ---------- Helpers DOM ---------- */
 const $=(s,r=document)=>r.querySelector(s);
 const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 
@@ -39,7 +58,7 @@ function parseCSV(txt){
   return rows.filter(r=>r.some(x=>x && x.trim()!=="")).map(r=>{ const o={}; head.forEach((h,idx)=>o[h]=(r[idx]??"").trim()); return o; });
 }
 function isPdf(u){return /\.pdf(\?|#|$)/i.test(u);}
-/* Normalizza per join “nome = luogo” (ignora accenti, apostrofi, spazi multipli ecc.) */
+/* Normalizza per join “nome = luogo” */
 const normKey = s => (s||"")
   .toLowerCase()
   .normalize("NFD").replace(/\p{Diacritic}/gu,"")
@@ -68,21 +87,13 @@ function enhanceInline(raw){
   if(!raw) return "";
   let s = raw;
 
-  // grassetto
-  s = s.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
-
-  // evidenza arancione
-  s = s.replace(/!!(.+?)!!/g, '<span class="warn-mark">$1</span>');
-
-  // markdown link [testo](url)
-  s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
-
-  // email -> mailto (evita di rompere link già creati)
+  s = s.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");                    // **bold**
+  s = s.replace(/!!(.+?)!!/g, '<span class="warn-mark">$1</span>');          // evidenza
+  s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,                     // [txt](url)
+                '<a href="$2" target="_blank" rel="noopener">$1</a>');
   s = s.replace(/(^|[\s(])([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})(?=[\s),]|$)/g,
-                '$1<a href="mailto:$2">$2</a>');
-
-  // azione: apri Info Modulo A (Note generali)
-  s = s.replace(/\[\[modA(?:\|([^\]]+))?\]\]/gi,
+                '$1<a href="mailto:$2">$2</a>');                              // email -> mailto
+  s = s.replace(/\[\[modA(?:\|([^\]]+))?\]\]/gi,                             // [[modA|...]]
                 (_,label)=>`<a href="#" data-open="modA_general">${label||"vedi Info Modulo A"}</a>`);
 
   return s;
@@ -111,15 +122,13 @@ function buildCollapsibleWarnList(raw){
 
       if (cur.seenBlank) {
         const summaryEndsWithColon = /[:：]\s*$/.test(cur.summary);
-        // Sotto-elenco SOLO se il punto finisce con ":" e non abbiamo ancora testo non-dash nel body
         if (summaryEndsWithColon && !cur.bodyHadNonDash) {
-          cur.body.push(Lraw);           // resta come "-" per formatInfoText -> <ul><li>...
+          cur.body.push(Lraw);           // sotto-elenco annidato
         } else {
           push(); startNew(text);        // nuovo top-level
         }
       } else {
-        // nuovo top-level (nessun capoverso tra i due)
-        push(); startNew(text);
+        push(); startNew(text);          // nuovo top-level
       }
       continue;
     }
@@ -133,11 +142,10 @@ function buildCollapsibleWarnList(raw){
     // testo normale
     if (cur) {
       if (!cur.seenBlank) {
-        // estende il riassunto prima del capoverso
         cur.summary += " " + L;
       } else {
         cur.body.push(Lraw);
-        if (!/^\s*-\s+/.test(L)) cur.bodyHadNonDash = true;  // segnala presenza di contenuto non elenco
+        if (!/^\s*-\s+/.test(L)) cur.bodyHadNonDash = true;
       }
     } else {
       startNew(L);
@@ -154,7 +162,7 @@ function buildCollapsibleWarnList(raw){
 
     if (hasBody) {
       li.className = "li-collapsible";
-      const det = document.createElement("details"); // chiuso di default
+      const det = document.createElement("details"); // chiusi di default
       const sum = document.createElement("summary");
       sum.innerHTML = enhanceInline(g.summary);
 
@@ -195,7 +203,7 @@ async function renderHomepageWarnings(){
 /* ---------- ENTI / ISTITUZIONI (loghi, convenzionate) ---------- */
 let ENTI=[];
 async function loadEnti(){
-  const txt = await fetch(ASSETS.enti,{cache:"no-store"}).then(r=>r.text());
+  const txt = await fetch(ver(ASSETS.enti)).then(r=>r.text());
   const rows = parseCSV(txt);
   ENTI = rows.map(r=>({
     istituzione:(r.istituzione||"").trim(),
@@ -209,7 +217,7 @@ function renderConvenzionateAccordion(){
   const list = ENTI.filter(e=>e.sedi);
   wrap.innerHTML = list.map(e=>`
     <a class="enti-card" href="${ASSETS.logosBase+encodeURIComponent(e.logo)}" download="${e.logo}">
-      <img src="${ASSETS.logosBase+encodeURIComponent(e.logo)}" alt="${e.istituzione}">
+      <img loading="lazy" decoding="async" src="${ASSETS.logosBase+encodeURIComponent(e.logo)}" alt="${e.istituzione}">
       <span>${e.sedi}</span>
     </a>`).join("");
 }
@@ -218,22 +226,28 @@ function renderConvenzionateAccordion(){
 const MOD_FILENAME={A:"Modulo_A.txt",R:"Modulo_R.txt",B:"Modulo_B.txt",S:"Modulo_S.txt"};
 const MODULE_FILES={A:["modulo_A.docx"],R:["modulo_R.dotx","modulo_Rdotx"],B:["modulo_B.dotx"],S:["modulo_S.dotx"]};
 
-async function loadTxt(u){ const r=await fetch(u,{cache:"no-store"}); if(!r.ok) throw 0; return r.text(); }
+async function loadTxt(u){ const r=await fetch(ver(u)); if(!r.ok) throw 0; return r.text(); }
 
 async function openModuleInfoByKey(k, opts = {}){
   const title={A:"Modulo A – Richiesta di autorizzazione preventiva",R:"Modulo R – Dati personali e sulla missione",B:"Modulo B – Rendicontazione a rientro",S:"Modulo S – Attestazione sede di servizio"}[k]||"Informazioni";
   $("#moduleInfoTitle").textContent=title;
   try{
-    const [spec,generali]=await Promise.all([loadTxt(ASSETS.infoBase+MOD_FILENAME[k]), loadTxt(ASSETS.infoBase+"info_generali.txt")]);
+    const [spec,generali] = await Promise.all([
+      loadTxt(ASSETS.infoBase+MOD_FILENAME[k]),
+      loadTxt(ASSETS.infoBase+"info_generali.txt")
+    ]);
     $("#moduleInfoBody").innerHTML = formatInfoText(spec);
     $("#generalNotes").innerHTML   = formatInfoText(generali);
   }catch{
     $("#moduleInfoBody").textContent="Impossibile caricare il testo."; $("#generalNotes").textContent="";
   }
+  // Assicura i loghi convenzionati solo quando serve
+  if(!ENTI.length){ try{ await loadEnti(); } catch{} }
   renderConvenzionateAccordion();
+
   openDialog($("#moduleInfoDialog"));
 
-    if (opts.focusGeneral) {
+  if (opts.focusGeneral) {
     const det = document.getElementById("accGeneralNotes");
     if (det) {
       det.open = true;
@@ -246,7 +260,13 @@ async function openModuleInfoByKey(k, opts = {}){
 
 async function downloadModuleByKey(k){
   for(const u of (MODULE_FILES[k]||[]).map(f=>ASSETS.moduliBase+f)){
-    try{ const h=await fetch(u,{method:"HEAD",cache:"no-store"}); if(h.ok){ const a=document.createElement("a"); a.href=u; a.download=""; document.body.appendChild(a); a.click(); a.remove(); return; } }catch{}
+    try{
+      const h=await fetch(ver(u),{method:"HEAD"});
+      if(h.ok){
+        const a=document.createElement("a"); a.href=u; a.download="";
+        document.body.appendChild(a); a.click(); a.remove(); return;
+      }
+    }catch{}
   }
   alert("File non trovato per il modulo "+k);
 }
@@ -255,7 +275,7 @@ function setupModules(){
   $$(".doc-button").forEach(b=>b.addEventListener("click",()=>downloadModuleByKey(b.dataset.modkey)));
 }
 
-/* ---------- LOGHI UTILI ---------- */
+/* ---------- LOGHI UTILI (lazy) ---------- */
 let logosFiltered=[], logosPage=0;
 const LOGOS_PAGE_SIZE=12;
 
@@ -273,7 +293,8 @@ function setupLoghiUtili(){
       const a=document.createElement("a");
       const file = ASSETS.logosBase+encodeURIComponent(e.logo);
       a.className="logo-card"; a.href=file; a.download=e.logo;
-      const img=new Image(); img.src=file; img.alt=e.istituzione;
+      const img=new Image(); img.loading="lazy"; img.decoding="async";
+      img.src=file; img.alt=e.istituzione;
       const span=document.createElement("span"); span.className="logo-name"; span.textContent=e.istituzione;
       a.append(img,span); grid.appendChild(a);
     });
@@ -287,21 +308,11 @@ function setupLoghiUtili(){
     logosPage=0; render();
   };
 
-  search.addEventListener("input", refilter);
-  prev.addEventListener("click", ()=>{ if(logosPage>0){ logosPage--; render(); }});
-  next.addEventListener("click", ()=>{ if((logosPage+1)*LOGOS_PAGE_SIZE < logosFiltered.length){ logosPage++; render(); }});
+  search?.addEventListener("input", refilter);
+  prev?.addEventListener("click", ()=>{ if(logosPage>0){ logosPage--; render(); }});
+  next?.addEventListener("click", ()=>{ if((logosPage+1)*LOGOS_PAGE_SIZE < logosFiltered.length){ logosPage++; render(); }});
 
   logosFiltered=[...ENTI]; render();
-}
-
-// --- Costruttore "banda loghi"
-const bannerBtn = document.getElementById("buildLogosBannerBtn");
-if (bannerBtn) {
-  bannerBtn.addEventListener("click", () => {
-    // passiamo SOLO il necessario al componente
-    const logos = ENTI.map(e => ({ name: e.istituzione, file: e.logo }));
-    window.LogoBannerBuilder?.open(logos, { base: ASSETS.logosBase });
-  });
 }
 
 /* ---------- CALENDARIO / GEODATI ---------- */
@@ -313,7 +324,7 @@ let EVENTS=[],EVENTS_BY_DAY=new Map();
 let CURRENT_MONTH=(()=>{ const n=new Date(); return new Date(Date.UTC(n.getUTCFullYear(),n.getUTCMonth(),1)); })();
 
 async function loadEventi(){
-  const csv=await fetch(ASSETS.eventi,{cache:"no-store"}).then(r=>r.text());
+  const csv=await fetch(ver(ASSETS.eventi)).then(r=>r.text());
   const rows=parseCSV(csv);
   EVENTS = rows.map(r=>{
     const from = parseMDY2Y(r.date_from), to = parseMDY2Y(r.date_to) || from;
@@ -339,10 +350,10 @@ async function loadEventi(){
 function presenceClass(p){ const v=(p||"").toLowerCase(); if(v==="si") return "presenza-si"; if(v==="preferibile") return "presenza-preferibile"; if(v==="no") return "presenza-no"; return ""; }
 
 let comuniCache=null, luoghiCache=null, LUOGHI_BY_NAME=null;
-async function getComuni(){ if(comuniCache) return comuniCache; comuniCache=await fetch(ASSETS.comuni,{cache:"no-store"}).then(r=>r.json()); return comuniCache; }
+async function getComuni(){ if(comuniCache) return comuniCache; comuniCache=await fetch(ver(ASSETS.comuni)).then(r=>r.json()); return comuniCache; }
 async function getLuoghi(){
   if(luoghiCache) return luoghiCache;
-  luoghiCache = await fetch(ASSETS.luoghi,{cache:"no-store"}).then(r=>r.json());
+  luoghiCache = await fetch(ver(ASSETS.luoghi)).then(r=>r.json());
   LUOGHI_BY_NAME = new Map();
   (luoghiCache.features||[]).forEach(f=>{
     const nm = normKey(f.properties?.nome);
@@ -358,11 +369,11 @@ function makePreview(label,url){
   const d=document.createElement("div"); d.className="preview";
   d.innerHTML=`
     <div class="preview-title">${label}</div>
-    ${isPdf(url)?`<embed src="${url}#toolbar=0&navpanes=0&scrollbar=0" type="application/pdf" />`:`<img loading="lazy" alt="${label}" src="${url}" />`}
+    ${isPdf(url)?`<embed src="${url}#toolbar=0&navpanes=0&scrollbar=0" type="application/pdf" />`:`<img loading="lazy" decoding="async" alt="${label}" src="${url}" />`}
     <div class="actions">
       <button class="btn btn-info btn-expand" type="button"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20ZM11 10h2v7h-2v-7Zm0-3h2v2h-2V7Z"/></svg>Espandi</button>
       <a class="btn btn-download" href="${url}" download><svg viewBox="0 0 24 24"><path d="M12 3a1 1 0 0 1 1 1v9.586l2.293-2.293 1.414 1.414L12 17.414l-4.707-4.707 1.414-1.414L11 13.586V4a1 1 0 0 1 1-1ZM5 19h14v2H5v-2Z"/></svg>Scarica</a>
-      <a class="btn btn-info" href="${url}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20ZM11 10h2v7h-2v-7Zm0-3h2v2h-2V7Z"/></svg>Apri</a>
+      <a class="btn btn-info" href="${url}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Z"/></svg>Apri</a>
     </div>`;
   d.querySelector(".btn-expand").addEventListener("click",()=> d.classList.toggle("preview--expanded"));
   return d;
@@ -372,7 +383,7 @@ function makePreview(label,url){
 function buildModulistica(ev){
   const col=document.createElement("div"); col.className="modulistica-col";
   if(["convegno","evento"].includes(ev.tipo)){
-    const nec=document.createElement("details"); nec.className="mod-accordion"; nec.open=true;
+    const nec=document.createElement("details"); nec.className="mod-accordion"; /* chiuso di default */
     nec.innerHTML=`<summary>Necessarie (per ${ev.tipo})</summary><div></div>`;
     const box=nec.querySelector("div");
     [
@@ -380,7 +391,7 @@ function buildModulistica(ev){
       { label:"Dopo l'arrivo (Contabilità)", mods:["B"] },
       { label:"Eventuale (fuori sede)", mods:["S"] },
     ].forEach(sec=>{
-      const d=document.createElement("details"); d.className="sub-accordion"; d.open=true;
+      const d=document.createElement("details"); d.className="sub-accordion"; /* chiuso di default */
       d.innerHTML=`<summary>${sec.label}</summary><div class="mod-links"></div>`;
       const links=d.querySelector(".mod-links");
       sec.mods.forEach(k=>{
@@ -421,7 +432,7 @@ function buildEventBody(ev,alsoList){
       <span><strong>Date:</strong> ${formatDateRange(ev.from, ev.to)}</span>
       ${timeStr ? `<span><strong>Orario:</strong> ${timeStr}</span>` : ""}
       ${ev.città ? `<span><strong>Città:</strong> ${ev.città}</span>` : ""}
-      <span class="luogo-line" hidden></span>     <!-- riempita dopo la join -->
+      <span class="luogo-line" hidden></span>
       ${ev.presenza ? `<span><strong>Presenza:</strong> ${ev.presenza}</span>` : ""}
       ${ev.sicuro ? `<span><strong>Sicuro:</strong> ${ev.sicuro}</span>` : ""}
     </div>`;
@@ -461,7 +472,7 @@ function buildEventBody(ev,alsoList){
 
   setTimeout(async ()=>{
     const container=$("#eventMap"); if(!container) return;
-    const map=L.map(container,{zoomControl:true,scrollWheelZoom:false});
+    const map=L.map(container,{zoomControl:true,scrollWheelZoom:false, preferCanvas:true});
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"&copy; OpenStreetMap",maxZoom:19}).addTo(map);
 
     let fit=false, luogoFeature=null;
@@ -475,7 +486,6 @@ function buildEventBody(ev,alsoList){
         m.bindPopup(`<strong style="color:#2e7d32">${luogoFeature.properties?.nome||ev.luogo}</strong><br>${addr||""}`);
         map.setView([y,x], 15);
         fit=true;
-        // completa riga "Luogo: ..."
         const span = top.querySelector(".luogo-line");
         if(span){ span.hidden=false; span.innerHTML = `<strong>Luogo:</strong> ${luogoFeature.properties?.nome||ev.luogo}${addr?` (${addr})`:""}`; }
       }
@@ -487,7 +497,6 @@ function buildEventBody(ev,alsoList){
         const layer=L.geoJSON(feat,{style:{color:"#3a7bd5",weight:2}}).addTo(map);
         try{ map.fitBounds(layer.getBounds(),{padding:[20,20]}); fit=true; }catch{}
       }
-      // se avevamo “luogo” ma non trovato, mostra almeno il testo
       if(ev.luogo && !luogoFeature){
         const span = top.querySelector(".luogo-line");
         if(span){ span.hidden=false; span.innerHTML = `<strong>Luogo:</strong> ${ev.luogo}`; }
@@ -507,13 +516,13 @@ let calendarMap=null, cityLayer=null, placeLayer=null;
 async function renderCalendarMap(){
   const mapEl=$("#calendarMap");
   if(!calendarMap){
-    calendarMap=L.map(mapEl,{zoomControl:true,scrollWheelZoom:true});
+    calendarMap=L.map(mapEl,{zoomControl:true,scrollWheelZoom:true, preferCanvas:true});
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"&copy; OpenStreetMap",maxZoom:19}).addTo(calendarMap);
     cityLayer = L.layerGroup().addTo(calendarMap);
     placeLayer = L.layerGroup().addTo(calendarMap);
     const updateVisibility=()=>{
       const z = calendarMap.getZoom();
-      if(z>=11){ // zoom cittadino -> mostra luoghi precisi
+      if(z>=11){
         calendarMap.addLayer(placeLayer); calendarMap.removeLayer(cityLayer);
       }else{
         calendarMap.addLayer(cityLayer); calendarMap.removeLayer(placeLayer);
@@ -575,7 +584,7 @@ function openCityEvents(city,list,feat){
   const icon=document.createElement("div"); icon.className="event-top__icon"; icon.style.backgroundImage=`url('${ASSETS.iconsBase}evento.png')`; top.appendChild(icon);
   wrap.appendChild(top);
   const left=document.createElement("div"); left.className="modulistica-col";
-  left.innerHTML=`<details class="mod-accordion" open><summary>Eventi di ${city}</summary><div class="small">Seleziona un evento per vedere dettagli e modulistica.</div></details>`;
+  left.innerHTML=`<details class="mod-accordion"><summary>Eventi di ${city}</summary><div class="small">Seleziona un evento per vedere dettagli e modulistica.</div></details>`;
   const center=document.createElement("div"); center.className="event-map-col"; center.innerHTML=`<div id="eventMap"></div>`;
   const right=document.createElement("div"); right.className="event-right";
   const docs=document.createElement("div");
@@ -592,7 +601,7 @@ function openCityEvents(city,list,feat){
   wrap.append(left,center,right); body.appendChild(wrap); openDialog($("#eventDialog"));
   setTimeout(()=>{
     const container=$("#eventMap"); if(!container) return;
-    const map=L.map(container,{zoomControl:true,scrollWheelZoom:false});
+    const map=L.map(container,{zoomControl:true,scrollWheelZoom:false, preferCanvas:true});
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"&copy; OpenStreetMap",maxZoom:19}).addTo(map);
     if(feat){ const layer=L.geoJSON(feat,{style:{color:"#3a7bd5",weight:2}}).addTo(map); try{ map.fitBounds(layer.getBounds(),{padding:[20,20]}); }catch{ map.setView([41.125,16.866],6); } }
     else { map.setView([41.125,16.866],6); }
@@ -608,7 +617,7 @@ function openPlaceEvents(placeName,list,feat,addr){
   const icon=document.createElement("div"); icon.className="event-top__icon"; icon.style.backgroundImage=`url('${ASSETS.iconsBase}evento.png')`; top.appendChild(icon);
   wrap.appendChild(top);
   const left=document.createElement("div"); left.className="modulistica-col";
-  left.innerHTML=`<details class="mod-accordion" open><summary>Eventi a ${placeName}</summary><div class="small">Seleziona un evento per i dettagli.</div></details>`;
+  left.innerHTML=`<details class="mod-accordion"><summary>Eventi a ${placeName}</summary><div class="small">Seleziona un evento per i dettagli.</div></details>`;
   const center=document.createElement("div"); center.className="event-map-col"; center.innerHTML=`<div id="eventMap"></div>`;
   const right=document.createElement("div"); right.className="event-right";
   const docs=document.createElement("div");
@@ -625,7 +634,7 @@ function openPlaceEvents(placeName,list,feat,addr){
   wrap.append(left,center,right); body.appendChild(wrap); openDialog($("#eventDialog"));
   setTimeout(()=>{
     const container=$("#eventMap"); if(!container) return;
-    const map=L.map(container,{zoomControl:true,scrollWheelZoom:false});
+    const map=L.map(container,{zoomControl:true,scrollWheelZoom:false, preferCanvas:true});
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"&copy; OpenStreetMap",maxZoom:19}).addTo(map);
     if(feat && feat.geometry){
       const [x,y]=feat.geometry.coordinates;
@@ -641,25 +650,26 @@ function openPlaceEvents(placeName,list,feat,addr){
   },0);
 }
 
-/* ---------- PROGETTI UTILI (con paginazione 9) ---------- */
+/* ---------- PROGETTI UTILI (con paginazione 9, lazy) ---------- */
 const KNOWN_CATS = [
   "GIS","utility","marcatura","statistica","archeologia","archeobotanica",
   "linguistica","storia","automatation","ML/AI","bibliografia","altro",
-  "mio"                                           // <— NEW
+  "mio"
 ];
 const LOWER_MAP = Object.fromEntries(KNOWN_CATS.map(n=>[n.toLowerCase(), n]));
 const CAT_COLORS = {
   "GIS":"#bfe3ff","utility":"#ccebd4","marcatura":"#ffd6a8","statistica":"#d8c7ff",
   "archeologia":"#ffcfe1","archeobotanica":"#cfe9f6","linguistica":"#ffe2b6","storia":"#bfeadf",
   "automatation":"#d8d6ff","ML/AI":"#ffd7d7","bibliografia":"#fff0b3","altro":"#dfe7ef",
-  "mio":"#ffd7f0"                                // <— NEW (pastello)
+  "mio":"#ffd7f0"
 };
-function makeImageFilterChip(name, imgSrc, title=""){            // <— NEW
+function makeImageFilterChip(name, imgSrc, title=""){
   const chip = document.createElement("button");
   chip.className = "filter-chip filter-chip--image active";
   chip.title = title || name;
   chip.setAttribute("aria-label", title || name);
   const img = new Image();
+  img.loading="lazy"; img.decoding="async";
   img.src = imgSrc; img.alt = title || name;
   chip.appendChild(img);
 
@@ -675,15 +685,20 @@ function makeImageFilterChip(name, imgSrc, title=""){            // <— NEW
 }
 function toGroup(catRaw){ const low=(catRaw||"").trim().toLowerCase(); if(low==="ml/aibibliografia"){ return ["ML/AI","bibliografia"]; } const mapped = LOWER_MAP[low]; return mapped ? [mapped] : ["altro"]; }
 function colorFor(group){ return CAT_COLORS[group] || CAT_COLORS["altro"]; }
-/* mapping filename + risoluzione robusta */
+/* mapping filename + risoluzione robusta (manteniamo soluzione attuale) */
 function projectImageFile(name){
   if(!name) return "placeholder";
-  const normalized = name.replace(/\u2044/g,'/'); // fraction slash -> slash
+  const normalized = name.replace(/\u2044/g,'/');
   if(/catch\/?me-nator!/i.test(normalized)) return "Catch-me-nator";
   let n = name.replace(/\s+/g,''); n = n.replace(/[\/\u2044]+/g,'-'); n = n.replace(/[!'",.:;?()]/g,'');
   return n || "placeholder";
 }
-async function firstExisting(urls){ for(const u of urls){ try{ const r=await fetch(u,{method:"HEAD",cache:"no-store"}); if(r.ok) return u; }catch{} } return null; }
+async function firstExisting(urls){ 
+  for(const u of urls){ 
+    try{ const r=await fetch(ver(u),{method:"HEAD"}); if(r.ok) return u; }catch{} 
+  } 
+  return null; 
+}
 async function resolveProjectImage(name){
   const base = ASSETS.projectsImgBase;
   const core = projectImageFile(name);
@@ -711,7 +726,7 @@ const PROJECTS_PAGE_SIZE=9;
 let projPrev, projNext, projCount;
 
 async function loadProgetti(){
-  const txt = await fetch(ASSETS.progetti, {cache:"no-store"}).then(r=>r.text());
+  const txt = await fetch(ver(ASSETS.progetti)).then(r=>r.text());
   const rows = parseCSV(txt);
   PROGETTI = rows.map(r=>{
     const origCats = (r.categoria||"").split(",").map(x=>x.trim()).filter(Boolean);
@@ -748,16 +763,11 @@ function ensureProjectsPager(){
   projNext.addEventListener("click", ()=>{ if((projectsPage+1)*PROJECTS_PAGE_SIZE < projectsFiltered.length){ projectsPage++; renderProgettiGrid(true); }});
 }
 function setupProgettiUI(){
-  const tb = $("#projectsToolbar"); tb.innerHTML="";
-  KNOWN_CATS.filter(c=>c!=="mio").forEach(cat=>{           // <— escludo 'mio' dai chip testuali
-    const c=makeFilterChip(cat); CHIP_NODES[cat]=c; tb.appendChild(c);
-  });
+  const tb = $("#projectsToolbar"); if(!tb) return; tb.innerHTML="";
+  KNOWN_CATS.filter(c=>c!=="mio").forEach(cat=>{ const c=makeFilterChip(cat); CHIP_NODES[cat]=c; tb.appendChild(c); });
 
-  // spacer per spingere il logo a destra
-  const spacer = document.createElement("span");
-  spacer.className = "chip-spacer"; tb.appendChild(spacer);
+  const spacer = document.createElement("span"); spacer.className = "chip-spacer"; tb.appendChild(spacer);
 
-  // chip immagine 'mio'
   const myChip = makeImageFilterChip("mio", ASSETS.erasmoLogo, "Progetti miei");
   CHIP_NODES["mio"] = myChip; tb.appendChild(myChip);
 
@@ -773,7 +783,8 @@ function setupProgettiUI(){
   updateChips(); renderProgettiGrid();
 }
 function renderProgettiGrid(keepPage=false){
-  const grid = $("#projectsGrid"); grid.innerHTML = "";
+  const grid = $("#projectsGrid"); if(!grid) return;
+  grid.innerHTML = "";
   projectsFiltered = PROGETTI.filter(p => p.groups.some(g => SELECTED.has(g)));
   if(!keepPage) projectsPage = 0;
   const start = projectsPage*PROJECTS_PAGE_SIZE;
@@ -850,6 +861,26 @@ function setupSpeedDial(){
   $("#musicClose").addEventListener("click",()=>{ $("#musicFrame").src="about:blank"; $("#musicDock").hidden=true; });
 }
 
+/* ---------- Lazy helpers ---------- */
+function lazyInitByDetailsOrIO({detailsSelector, targetSelector, init}){
+  let done=false;
+  const run=async()=>{ if(done) return; done=true; await init(); };
+  const det = detailsSelector ? document.querySelector(detailsSelector) : null;
+  if(det){
+    if(det.open){ run(); }
+    else det.addEventListener("toggle", ()=>{ if(det.open) run(); }, { once:true });
+    return;
+  }
+  const target = targetSelector ? document.querySelector(targetSelector) : null;
+  if(target && "IntersectionObserver" in window){
+    const io = new IntersectionObserver((entries)=>{ if(entries.some(e=>e.isIntersecting)){ io.disconnect(); run(); }});
+    io.observe(target);
+  }else{
+    // fallback: al primo click ovunque
+    document.addEventListener("click", function h(){ document.removeEventListener("click", h); setTimeout(run,0); }, { once:true });
+  }
+}
+
 /* ---------- Boot ---------- */
 async function boot(){
   closeOnButtons();
@@ -859,15 +890,29 @@ async function boot(){
 
   await renderHomepageWarnings();
 
-  await loadEnti();
-  setupLoghiUtili();
-
+  // Eventi & calendario subito
   await loadEventi();
   renderCalendar();
 
-  await loadProgetti();
-  setupProgettiUI();
+  // Lazy init LOGHI: carica dati + render SOLO quando si apre l'accordion
+  lazyInitByDetailsOrIO({
+    detailsSelector:"#accLoghiUtili",
+    targetSelector:"#logosGrid",
+    init: async ()=>{
+      if(!ENTI.length) await loadEnti();
+      setupLoghiUtili();
+      renderConvenzionateAccordion();
+    }
+  });
 
-  renderConvenzionateAccordion();
+  // Lazy init PROGETTI: carica CSV + render SOLO quando si apre l'accordion
+  lazyInitByDetailsOrIO({
+    detailsSelector:"#accProgettiUtili",
+    targetSelector:"#projectsGrid",
+    init: async ()=>{
+      if(!PROGETTI.length) await loadProgetti();
+      setupProgettiUI();
+    }
+  });
 }
 document.addEventListener("DOMContentLoaded", boot);
