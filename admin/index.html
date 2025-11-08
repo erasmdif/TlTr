@@ -5,54 +5,73 @@
     <title>Editor Avvisi</title>
     <meta name="robots" content="noindex" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <!-- Evita cache aggressive su GitHub Pages -->
+
+    <!-- Evita cache aggressive su Pages -->
     <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
 
+    <!-- Inizializzazione manuale -->
     <script>window.CMS_MANUAL_INIT = true;</script>
-    <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
+
+    <!-- Decap CMS (pinnato) -->
+    <script src="https://unpkg.com/decap-cms@3.3.0/dist/decap-cms.js"></script>
 
     <style>
       body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
       .Pane.Pane1 { min-width: 320px; }
-      .nc-loginPage-logo { display:none; }
+      .nc-loginPage-logo { display:none; } /* pulizia login */
     </style>
   </head>
   <body>
     <script>
-      // ========= FALLBACK CONFIG (usata solo se config.yml non viene letta) =========
-      // *** MODIFICA QUI SOLO SE CAMBIA IL NOME REPO O IL BRANCH ***
-      const FALLBACK_CONFIG = {
-        backend: { name: "github", repo: "erasmdif/TlTr", branch: "main", auth_type: "token" },
-        media_folder: "static/uploads",
-        public_folder: "/TlTr/static/uploads",
-        publish_mode: "editorial_workflow",
-        collections: [
-          {
-            name: "homepage",
-            label: "Avvisi Homepage",
-            files: [
-              {
-                file: "static/moduli/info/info_homepage.txt",
-                label: "Info Homepage",
-                name: "info_homepage",
-                editor: { preview: false },
-                fields: [
-                  { label: "Contenuto", name: "body", widget: "markdown",
-                    buttons: ["bold","italic","link","bulleted-list","numbered-list","code","heading-one","heading-two","quote"]
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      };
+      // Aspetta che la libreria sia caricata
+      (function waitCMS(){
+        if (!window.CMS) return setTimeout(waitCMS, 25);
 
-      function ensureCMS(cb){ if(window.CMS){ cb(); } else { setTimeout(()=>ensureCMS(cb), 30); } }
+        // Pulisci eventuali sessioni OAuth cacheate
+        try{ localStorage.removeItem("netlify-cms-user"); }catch(e){}
 
-      ensureCMS(() => {
-        // ---------- Componenti custom ----------
+        // ---- CONFIG INLINE (forzata) ----
+        const CONFIG = {
+          backend: {
+            name: "github",
+            repo: "erasmdif/TlTr",   // <--- cambia solo se rinomini repo
+            branch: "main",
+            auth_type: "token"       // <--- forza il login via PAT
+          },
+          media_folder: "static/uploads",
+          public_folder: "/TlTr/static/uploads",
+          publish_mode: "editorial_workflow",
+          collections: [
+            {
+              name: "homepage",
+              label: "Avvisi Homepage",
+              files: [
+                {
+                  file: "static/moduli/info/info_homepage.txt",
+                  label: "Info Homepage",
+                  name: "info_homepage",
+                  editor: { preview: false },
+                  fields: [
+                    {
+                      label: "Contenuto",
+                      name: "body",
+                      widget: "markdown",
+                      buttons: [
+                        "bold","italic","link",
+                        "bulleted-list","numbered-list",
+                        "code","heading-one","heading-two","quote"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        };
+
+        // ---- Componenti custom (come concordato) ----
         CMS.registerEditorComponent({
           id: "highlight",
           label: "Evidenzia (!!)",
@@ -62,6 +81,7 @@
           toBlock: o => `!!${o.text}!!`,
           toPreview: o => `<span style="background:#ffe0b2;padding:0 .2em;border-radius:.2em">${CMS.escapeHtml(o.text)}</span>`
         });
+
         CMS.registerEditorComponent({
           id: "moda",
           label: "Link Modulo A",
@@ -71,6 +91,7 @@
           toBlock: o => `[[modA|${o.label || "vedi Info Modulo A"}]]`,
           toPreview: o => `<em>Link Modulo A: ${CMS.escapeHtml(o.label || "vedi Info Modulo A")}</em>`
         });
+
         CMS.registerEditorComponent({
           id: "invisiblelink",
           label: "Link Invisibile",
@@ -81,27 +102,19 @@
           toPreview: o => `<span style="opacity:.6">🔗 ${CMS.escapeHtml(o.url)}</span>`
         });
 
+        // Messaggino guida nella pagina token
         CMS.registerPreviewStyle(`
           .nc-githubAuthenticationPage-token .nc-githubAuthenticationPage-info::after{
-            content: "Per accedere: crea un Fine-grained PAT su GitHub con permessi 'Contents: Read/Write' sul repo. Incollalo qui.";
+            content: "Usa un Fine-grained PAT con permesso 'Contents: Read/Write' sul repo erasmdif/TlTr, poi incollalo qui.";
             display:block; margin-top:.5rem; font-size:.9em; color:#555;
           }
         `, { raw: true });
 
-        // ---------- Init con config.yml, fallback inline se fallisce ----------
-        const cfgUrl = "/TlTr/admin/config.yml?ts=" + Date.now();
-        fetch(cfgUrl, { cache: "no-store" })
-          .then(r => {
-            if (!r.ok) throw new Error("HTTP " + r.status);
-            // Se esiste, lascia che Decap la carichi direttamente (così non dobbiamo parsarla qui)
-            CMS.init({ config: cfgUrl });
-            console.log("[Decap] Uso config.yml:", cfgUrl);
-          })
-          .catch(err => {
-            console.warn("[Decap] config.yml non accessibile, uso FALLBACK_CONFIG:", err);
-            CMS.init({ config: FALLBACK_CONFIG });
-          });
-      });
+        // Init definitivo (inline)
+        CMS.init({ config: CONFIG });
+
+        console.log("[Decap] Init FORZATO con auth_type: token");
+      })();
     </script>
   </body>
 </html>
