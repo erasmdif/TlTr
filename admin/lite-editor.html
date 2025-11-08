@@ -123,7 +123,7 @@
   </dialog>
 
   <script>
-    // ==== util =====
+    // ==== configurazione repo/file ====
     const owner = "erasmdif", repo = "TlTr", branch = "main";
     const path  = "static/moduli/info/info_homepage.txt";
 
@@ -133,8 +133,16 @@
     // forza decodifica UTF-8 (evita moji-bake tipo "attivitÃ")
     async function loadUTF8(url){
       const r = await fetch(url, {cache:"no-store"});
+      if(!r.ok) throw new Error("HTTP "+r.status);
       const buf = await r.arrayBuffer();
       return new TextDecoder("utf-8").decode(buf);
+    }
+
+    // Base64 -> UTF-8 sicuro
+    function b64ToUtf8(b64) {
+      const bin = atob(b64.replace(/\s/g, ""));
+      const bytes = new Uint8Array([...bin].map(ch => ch.charCodeAt(0)));
+      return new TextDecoder("utf-8").decode(bytes);
     }
 
     // --- markup interprete (stesso del sito) ---
@@ -164,53 +172,69 @@
       s = s.replace(/\(\((https?:\/\/[^\s)]+)\)\)/g, '<a class="ghost-link" href="$1" target="_blank" rel="noopener" aria-label="Apri link"></a>');
       return s;
     }
-
     function renderPreview(txt){
       $("#preview").innerHTML = formatInfoText( enhanceInline(txt) );
-      // eventuali ancore speciali non fanno nulla qui
       $("#preview").querySelectorAll('[data-open="modA_general"]').forEach(a=>{
         a.addEventListener("click",e=>{e.preventDefault();alert("Nel sito apre le info del Modulo A.");});
       });
     }
 
-    // ==== GitHub API (contenuti) ====
-    function gh(url){
+    // ==== GitHub API helper (ora accetta method/body/opzioni!) ====
+    function gh(url, options = {}) {
       const t = $("#ghToken").value.trim();
-      const h = {'Accept': 'application/vnd.github+json'};
-      if(t) h['Authorization'] = 'Bearer '+t;
-      return fetch(url,{headers:h});
+      const baseHeaders = { 'Accept': 'application/vnd.github+json' };
+      if (t) baseHeaders['Authorization'] = 'Bearer ' + t;
+      const headers = { ...baseHeaders, ...(options.headers || {}) };
+      return fetch(url, { ...options, headers });
     }
-    async function loadFile(){
-      // scarica blob della branch (per avere il file + sha)
+
+    // Carica metadata + SHA del file via API (UTF-8 safe), ma NON tocca l’editor.
+    async function loadFile() {
       const url = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}?ref=${branch}`;
       const r = await gh(url);
-      if(!r.ok){ throw new Error("GitHub API error "+r.status); }
+      if (!r.ok) throw new Error("GitHub API error " + r.status);
       const j = await r.json();
-      const txt = atob(j.content.replace(/\s/g,""));
-      $("#editor").value = txt;
-      renderPreview(txt);
-      return { sha:j.sha, text:txt };
+      const txt = b64ToUtf8(j.content);
+      return { sha: j.sha, text: txt };
     }
-    async function saveFile(commitMsg){
-      const content = btoa(unescape(encodeURIComponent($("#editor").value)));
+
+    // PUT con SHA corrente
+    async function saveFile(commitMsg) {
+      const text = $("#editor").value;
+      const content = btoa(unescape(encodeURIComponent(text)));
+
       // leggi sha corrente prima di scrivere
-      const head = await gh(`https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}?ref=${branch}`).then(r=>r.json());
+      const headResp = await gh(
+        `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}?ref=${branch}`
+      );
+      if (!headResp.ok) throw new Error("Impossibile leggere lo SHA: " + headResp.status);
+      const head = await headResp.json();
+
       const body = {
         message: commitMsg || "cms: update info_homepage",
-        content, branch,
-        sha: head.sha
+        content,
+        branch,
+        sha: head.sha,
       };
-      const r = await gh(`https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}`, {
-        method:"PUT",
-        headers:{'Content-Type':'application/json','Accept':'application/vnd.github+json','Authorization':'Bearer '+$("#ghToken").value.trim()},
-        body: JSON.stringify(body)
-      });
-      if(!r.ok){ throw new Error("Save failed "+r.status); }
-      return r.json();
+
+      const putResp = await gh(
+        `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        }
+      );
+
+      if (!putResp.ok) {
+        const txt = await putResp.text().catch(() => "");
+        throw new Error(`Save failed ${putResp.status} ${txt}`);
+      }
+      return putResp.json();
     }
 
     // ==== UI =====
-    // banner tutorial
+    // tutorial
     $("#openTokenTutorial").addEventListener("click",()=>$("#dlgToken").showModal());
     $("#openEditorTutorial").addEventListener("click",()=>$("#dlgEditor").showModal());
     $$("[data-close]").forEach(b=>b.addEventListener("click",()=>b.closest("dialog")?.close()));
@@ -220,29 +244,30 @@
     if(savedToken) $("#ghToken").value = savedToken;
     $("#ghToken").addEventListener("input", e => sessionStorage.setItem("gh_pat", e.target.value));
 
-    // carica contenuto
+    // carica contenuto (grezzo da Pages per accenti + API per SHA)
     $("#btnLoad").addEventListener("click", async ()=>{
       try{
         $("#btnLoad").disabled = true;
-        // forziamo anche il download “grezzo” dal sito per verificare UTF-8
-        // (solo per il primo paint dell’editor)
-        const raw = await loadUTF8("/TlTr/"+path);
+        const raw = await loadUTF8("/TlTr/"+path);   // UTF-8 certo
         $("#editor").value = raw;
         renderPreview(raw);
-        // ma per salvare serve anche lo SHA -> leggilo ora
-        await loadFile();
+        await loadFile(); // recupera SHA per il prossimo Save (anche se non lo usiamo qui)
       }catch(e){ alert("Errore nel caricamento: "+e.message); }
       finally{ $("#btnLoad").disabled = false; }
     });
 
-    // salva
+    // salva su GitHub
     $("#btnSave").addEventListener("click", async ()=>{
+      if(!$("#ghToken").value.trim()){
+        alert("Inserisci un GitHub PAT (fine-grained) con Contents: Read & Write sul repo TlTr.");
+        return;
+      }
       const msg = prompt("Messaggio commit:", "cms: update info_homepage");
       if(msg===null) return;
       try{
         $("#btnSave").disabled = true;
-        await saveFile(msg);
-        alert("Salvato 👍");
+        const res = await saveFile(msg);
+        alert("Salvato 👍\nCommit: " + (res.commit?.sha || "ok"));
       }catch(e){ alert("Errore salvataggio: "+e.message); }
       finally{ $("#btnSave").disabled = false; }
     });
