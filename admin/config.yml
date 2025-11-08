@@ -1,11 +1,10 @@
 backend:
   name: github
-  repo: <OWNER>/<REPO>         # <-- Sostituisci: es. erasmo/tltr
+  repo: erasmo/tltr         
   branch: main                 # <-- o il tuo branch Pages
   auth_type: token             # login via PAT nel browser
-  base_url: ""                 # nessun server auth
 
-site_url: https://<OWNER>.github.io/<REPO>/   # facoltativo ma utile per anteprime
+site_url: https://<OWNER>.github.io/erasmo/tltr   # facoltativo ma utile per anteprime
 
 media_folder: "static/uploads" # dove caricare media via CMS
 public_folder: "/static/uploads"
