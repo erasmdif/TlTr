@@ -25,24 +25,27 @@
   </head>
   <body>
     <script>
-      // Aspetta che la libreria sia caricata
-      (function waitCMS(){
-        if (!window.CMS) return setTimeout(waitCMS, 25);
+      (function boot(){
+        if (!window.CMS) return setTimeout(boot, 25);
 
-        // Pulisci eventuali sessioni OAuth cacheate
+        // 1) pulizia di eventuale sessione oauth cacheata
         try{ localStorage.removeItem("netlify-cms-user"); }catch(e){}
 
-        // ---- CONFIG INLINE (forzata) ----
+        // 2) CONFIG INLINE — niente file esterno
         const CONFIG = {
           backend: {
             name: "github",
-            repo: "erasmdif/TlTr",   // <--- cambia solo se rinomini repo
+            repo: "erasmdif/TlTr",
             branch: "main",
-            auth_type: "token"       // <--- forza il login via PAT
+            auth_type: "token"
           },
+          // IMPORTANTISSIMO: NON caricare config.yml esterno
+          load_config_file: false,
+
           media_folder: "static/uploads",
           public_folder: "/TlTr/static/uploads",
           publish_mode: "editorial_workflow",
+
           collections: [
             {
               name: "homepage",
@@ -71,7 +74,7 @@
           ]
         };
 
-        // ---- Componenti custom (come concordato) ----
+        // --- Componenti custom (come stabilito) ---
         CMS.registerEditorComponent({
           id: "highlight",
           label: "Evidenzia (!!)",
@@ -81,7 +84,6 @@
           toBlock: o => `!!${o.text}!!`,
           toPreview: o => `<span style="background:#ffe0b2;padding:0 .2em;border-radius:.2em">${CMS.escapeHtml(o.text)}</span>`
         });
-
         CMS.registerEditorComponent({
           id: "moda",
           label: "Link Modulo A",
@@ -91,7 +93,6 @@
           toBlock: o => `[[modA|${o.label || "vedi Info Modulo A"}]]`,
           toPreview: o => `<em>Link Modulo A: ${CMS.escapeHtml(o.label || "vedi Info Modulo A")}</em>`
         });
-
         CMS.registerEditorComponent({
           id: "invisiblelink",
           label: "Link Invisibile",
@@ -110,10 +111,13 @@
           }
         `, { raw: true });
 
-        // Init definitivo (inline)
+        // Init (SOLO INLINE – niente config.yml)
         CMS.init({ config: CONFIG });
 
-        console.log("[Decap] Init FORZATO con auth_type: token");
+        // debug: stampo la config effettiva
+        setTimeout(()=> {
+          try { console.log("[Decap] Config effettiva:", CMS.getConfig()?.toJS?.()); } catch(e){}
+        }, 200);
       })();
     </script>
   </body>
