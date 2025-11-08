@@ -5,17 +5,12 @@
     <title>Editor Avvisi</title>
     <meta name="robots" content="noindex" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <!-- Disabilita cache aggressiva del browser su Pages -->
+    <!-- Evita cache aggressive su GitHub Pages -->
     <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
 
-    <!-- Forza l'init manuale: useremo la tua config.yml specificando il percorso -->
-    <script>
-      window.CMS_MANUAL_INIT = true;
-    </script>
-
-    <!-- Decap CMS -->
+    <script>window.CMS_MANUAL_INIT = true;</script>
     <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
 
     <style>
@@ -26,53 +21,86 @@
   </head>
   <body>
     <script>
-      // Inizializza CMS caricando esplicitamente la config sotto /TlTr/admin/
-      CMS.init({ config: '/TlTr/admin/config.yml?v=2' });
+      // ========= FALLBACK CONFIG (usata solo se config.yml non viene letta) =========
+      // *** MODIFICA QUI SOLO SE CAMBIA IL NOME REPO O IL BRANCH ***
+      const FALLBACK_CONFIG = {
+        backend: { name: "github", repo: "erasmdif/TlTr", branch: "main", auth_type: "token" },
+        media_folder: "static/uploads",
+        public_folder: "/TlTr/static/uploads",
+        publish_mode: "editorial_workflow",
+        collections: [
+          {
+            name: "homepage",
+            label: "Avvisi Homepage",
+            files: [
+              {
+                file: "static/moduli/info/info_homepage.txt",
+                label: "Info Homepage",
+                name: "info_homepage",
+                editor: { preview: false },
+                fields: [
+                  { label: "Contenuto", name: "body", widget: "markdown",
+                    buttons: ["bold","italic","link","bulleted-list","numbered-list","code","heading-one","heading-two","quote"]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      };
 
-      // ============= Pulsanti custom (come prima) =============
-      CMS.registerEditorComponent({
-        id: "highlight",
-        label: "Evidenzia (!!)",
-        fields: [{ name: "text", label: "Testo", widget: "string" }],
-        pattern: /!!(.+?)!!/s,
-        fromBlock: match => ({ text: match[1] }),
-        toBlock: obj => `!!${obj.text}!!`,
-        toPreview: obj => `<span style="background:#ffe0b2;padding:0 .2em;border-radius:.2em">${CMS.escapeHtml(obj.text)}</span>`
-      });
+      function ensureCMS(cb){ if(window.CMS){ cb(); } else { setTimeout(()=>ensureCMS(cb), 30); } }
 
-      CMS.registerEditorComponent({
-        id: "moda",
-        label: "Link Modulo A",
-        fields: [{ name: "label", label: "Etichetta", widget: "string", default: "vedi Info Modulo A" }],
-        pattern: /\[\[modA\|([^\]]+)\]\]/,
-        fromBlock: m => ({ label: m[1] }),
-        toBlock: o => `[[modA|${o.label || "vedi Info Modulo A"}]]`,
-        toPreview: o => `<em>Link Modulo A: ${CMS.escapeHtml(o.label || "vedi Info Modulo A")}</em>`
-      });
+      ensureCMS(() => {
+        // ---------- Componenti custom ----------
+        CMS.registerEditorComponent({
+          id: "highlight",
+          label: "Evidenzia (!!)",
+          fields: [{ name: "text", label: "Testo", widget: "string" }],
+          pattern: /!!(.+?)!!/s,
+          fromBlock: m => ({ text: m[1] }),
+          toBlock: o => `!!${o.text}!!`,
+          toPreview: o => `<span style="background:#ffe0b2;padding:0 .2em;border-radius:.2em">${CMS.escapeHtml(o.text)}</span>`
+        });
+        CMS.registerEditorComponent({
+          id: "moda",
+          label: "Link Modulo A",
+          fields: [{ name: "label", label: "Etichetta", widget: "string", default: "vedi Info Modulo A" }],
+          pattern: /\[\[modA\|([^\]]+)\]\]/,
+          fromBlock: m => ({ label: m[1] }),
+          toBlock: o => `[[modA|${o.label || "vedi Info Modulo A"}]]`,
+          toPreview: o => `<em>Link Modulo A: ${CMS.escapeHtml(o.label || "vedi Info Modulo A")}</em>`
+        });
+        CMS.registerEditorComponent({
+          id: "invisiblelink",
+          label: "Link Invisibile",
+          fields: [{ name: "url", label: "URL", widget: "string" }],
+          pattern: /\(\((https?:\/\/[^\s)]+)\)\)/,
+          fromBlock: m => ({ url: m[1] }),
+          toBlock: o => `((${o.url}))`,
+          toPreview: o => `<span style="opacity:.6">🔗 ${CMS.escapeHtml(o.url)}</span>`
+        });
 
-      CMS.registerEditorComponent({
-        id: "invisiblelink",
-        label: "Link Invisibile",
-        fields: [{ name: "url", label: "URL", widget: "string" }],
-        pattern: /\(\((https?:\/\/[^\s)]+)\)\)/,
-        fromBlock: m => ({ url: m[1] }),
-        toBlock: o => `((${o.url}))`,
-        toPreview: o => `<span style="opacity:.6">🔗 ${CMS.escapeHtml(o.url)}</span>`
-      });
+        CMS.registerPreviewStyle(`
+          .nc-githubAuthenticationPage-token .nc-githubAuthenticationPage-info::after{
+            content: "Per accedere: crea un Fine-grained PAT su GitHub con permessi 'Contents: Read/Write' sul repo. Incollalo qui.";
+            display:block; margin-top:.5rem; font-size:.9em; color:#555;
+          }
+        `, { raw: true });
 
-      CMS.registerPreviewStyle(`
-        .nc-githubAuthenticationPage-token .nc-githubAuthenticationPage-info::after{
-          content: "Per accedere: crea un Fine-grained PAT su GitHub con permessi Contents: Read/Write sul repo. Incollalo qui.";
-          display:block; margin-top:.5rem; font-size:.9em; color:#555;
-        }
-      `, { raw: true });
-
-      CMS.registerEventListener({
-        name: 'preSave',
-        handler: ({ entry }) => {
-          const title = entry.getIn(['data', 'title']) || 'Update info_homepage';
-          entry.setIn(['meta', 'commitMessage'], `cms: ${title}`);
-        }
+        // ---------- Init con config.yml, fallback inline se fallisce ----------
+        const cfgUrl = "/TlTr/admin/config.yml?ts=" + Date.now();
+        fetch(cfgUrl, { cache: "no-store" })
+          .then(r => {
+            if (!r.ok) throw new Error("HTTP " + r.status);
+            // Se esiste, lascia che Decap la carichi direttamente (così non dobbiamo parsarla qui)
+            CMS.init({ config: cfgUrl });
+            console.log("[Decap] Uso config.yml:", cfgUrl);
+          })
+          .catch(err => {
+            console.warn("[Decap] config.yml non accessibile, uso FALLBACK_CONFIG:", err);
+            CMS.init({ config: FALLBACK_CONFIG });
+          });
       });
     </script>
   </body>

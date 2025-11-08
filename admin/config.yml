@@ -1,12 +1,11 @@
 backend:
   name: github
-  repo: erasmdif/TlTr       # <— il repo giusto, con maiuscole corrette
+  repo: erasmdif/TlTr
   branch: main
-  auth_type: token          # <— forza il login con PAT (niente Netlify)
-  # NON mettere base_url / site_id
+  auth_type: token      # token PAT, niente Netlify / OAuth
 
 media_folder: "static/uploads"
-public_folder: "/TlTr/static/uploads"   # <— importante su GitHub Pages
+public_folder: "/TlTr/static/uploads"
 
 publish_mode: editorial_workflow
 
