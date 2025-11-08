@@ -145,7 +145,7 @@
       return new TextDecoder("utf-8").decode(bytes);
     }
 
-    // --- markup interprete (stesso del sito) ---
+    // --- interprete markup come nel sito ---
     function formatInfoText(raw){
       if(!raw) return "";
       let s = raw.replace(/\r\n/g,"\n").replace(/_{3,}/g,"");
@@ -168,7 +168,6 @@
       s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
       s = s.replace(/(^|[\s(])([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})(?=[\s),]|$)/g,'$1<a href="mailto:$2">$2</a>');
       s = s.replace(/\[\[modA(?:\|([^\]]+))?\]\]/gi,(_,label)=>`<a href="#" data-open="modA_general">${label||"vedi Info Modulo A"}</a>`);
-      // link invisibile → ancora senza testo visibile
       s = s.replace(/\(\((https?:\/\/[^\s)]+)\)\)/g, '<a class="ghost-link" href="$1" target="_blank" rel="noopener" aria-label="Apri link"></a>');
       return s;
     }
@@ -179,37 +178,51 @@
       });
     }
 
-    // ==== GitHub API helper (ora accetta method/body/opzioni!) ====
-    function gh(url, options = {}) {
+    // ==== GitHub fetch (public e authed) ====
+    const GH_VERSION = { 'X-GitHub-Api-Version': '2022-11-28' };
+    function ghPublic(url, options = {}) {
+      const headers = { 'Accept':'application/vnd.github+json', ...GH_VERSION, ...(options.headers||{}) };
+      return fetch(url, { ...options, headers });
+    }
+    function ghAuthed(url, options = {}) {
       const t = $("#ghToken").value.trim();
-      const baseHeaders = { 'Accept': 'application/vnd.github+json' };
-      if (t) baseHeaders['Authorization'] = 'Bearer ' + t;
-      const headers = { ...baseHeaders, ...(options.headers || {}) };
+      const baseHeaders = { 'Accept':'application/vnd.github+json', ...GH_VERSION };
+      const headers = t ? { ...baseHeaders, 'Authorization': 'Bearer '+t, ...(options.headers||{}) }
+                        : { ...baseHeaders, ...(options.headers||{}) };
       return fetch(url, { ...options, headers });
     }
 
-    // Carica metadata + SHA del file via API (UTF-8 safe), ma NON tocca l’editor.
-    async function loadFile() {
+    // Carica metadata + SHA (public-first; se 404/401, riprova con token)
+    async function fetchHeadForSha(){
       const url = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}?ref=${branch}`;
-      const r = await gh(url);
-      if (!r.ok) throw new Error("GitHub API error " + r.status);
-      const j = await r.json();
-      const txt = b64ToUtf8(j.content);
-      return { sha: j.sha, text: txt };
+      let r = await ghPublic(url);
+      if(r.status === 404 || r.status === 401) {
+        // repo privato o token richiesto: riprova authed
+        r = await ghAuthed(url);
+      }
+      if(!r.ok){
+        const txt = await r.text().catch(()=> "");
+        throw new Error(`Impossibile leggere lo SHA: ${r.status} ${txt}`);
+      }
+      return r.json();
     }
 
-    // PUT con SHA corrente
+    // Carica il file (public) nell’editor + preview
+    async function loadFileIntoEditor(){
+      const raw = await loadUTF8("/TlTr/"+path);   // Pages, sicuro UTF-8
+      $("#editor").value = raw;
+      renderPreview(raw);
+    }
+
+    // PUT con SHA corrente (sempre autenticato)
     async function saveFile(commitMsg) {
+      if(!$("#ghToken").value.trim()){
+        throw new Error("Token mancante: incolla un PAT fine-grained o classic con permessi write su TlTr.");
+      }
       const text = $("#editor").value;
       const content = btoa(unescape(encodeURIComponent(text)));
 
-      // leggi sha corrente prima di scrivere
-      const headResp = await gh(
-        `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}?ref=${branch}`
-      );
-      if (!headResp.ok) throw new Error("Impossibile leggere lo SHA: " + headResp.status);
-      const head = await headResp.json();
-
+      const head = await fetchHeadForSha(); // ottiene sha (public o authed)
       const body = {
         message: commitMsg || "cms: update info_homepage",
         content,
@@ -217,7 +230,7 @@
         sha: head.sha,
       };
 
-      const putResp = await gh(
+      const putResp = await ghAuthed(
         `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}`,
         {
           method: "PUT",
@@ -227,41 +240,41 @@
       );
 
       if (!putResp.ok) {
-        const txt = await putResp.text().catch(() => "");
+        const txt = await putResp.text().catch(()=>"");
+        // messaggi più chiari
+        if(putResp.status === 401) {
+          throw new Error("401 Bad credentials: token errato/ scaduto oppure non incollato.");
+        }
+        if(putResp.status === 403 && /Resource not accessible by personal access token/i.test(txt)) {
+          throw new Error("403: il PAT fine-grained non ha accesso in scrittura a questo repo. Se stai usando un account collaboratore su repo di un altro utente, usa un PAT classic con scope «repo».");
+        }
         throw new Error(`Save failed ${putResp.status} ${txt}`);
       }
       return putResp.json();
     }
 
     // ==== UI =====
-    // tutorial
     $("#openTokenTutorial").addEventListener("click",()=>$("#dlgToken").showModal());
     $("#openEditorTutorial").addEventListener("click",()=>$("#dlgEditor").showModal());
     $$("[data-close]").forEach(b=>b.addEventListener("click",()=>b.closest("dialog")?.close()));
 
-    // ricorda token in session (solo tab corrente)
+    // token in sessionStorage (scheda corrente)
     const savedToken = sessionStorage.getItem("gh_pat");
     if(savedToken) $("#ghToken").value = savedToken;
     $("#ghToken").addEventListener("input", e => sessionStorage.setItem("gh_pat", e.target.value));
 
-    // carica contenuto (grezzo da Pages per accenti + API per SHA)
+    // LOAD: riempie editor da Pages (UTF-8) e si assicura lo SHA è raggiungibile
     $("#btnLoad").addEventListener("click", async ()=>{
       try{
         $("#btnLoad").disabled = true;
-        const raw = await loadUTF8("/TlTr/"+path);   // UTF-8 certo
-        $("#editor").value = raw;
-        renderPreview(raw);
-        await loadFile(); // recupera SHA per il prossimo Save (anche se non lo usiamo qui)
+        await loadFileIntoEditor();
+        await fetchHeadForSha(); // test & cache SHA richiesto
       }catch(e){ alert("Errore nel caricamento: "+e.message); }
       finally{ $("#btnLoad").disabled = false; }
     });
 
-    // salva su GitHub
+    // SAVE
     $("#btnSave").addEventListener("click", async ()=>{
-      if(!$("#ghToken").value.trim()){
-        alert("Inserisci un GitHub PAT (fine-grained) con Contents: Read & Write sul repo TlTr.");
-        return;
-      }
       const msg = prompt("Messaggio commit:", "cms: update info_homepage");
       if(msg===null) return;
       try{
@@ -272,7 +285,7 @@
       finally{ $("#btnSave").disabled = false; }
     });
 
-    // toolbar base
+    // Toolbar base
     function wrapSel(before, after){
       const ta = $("#editor");
       const [s,e] = [ta.selectionStart, ta.selectionEnd];
@@ -303,7 +316,7 @@
       }
     });
 
-    // toggle editor/preview (sostituzione, non “sotto”)
+    // Toggle editor/preview
     let showPreview = false;
     $("#btnToggle").addEventListener("click", ()=>{
       showPreview = !showPreview;
@@ -313,13 +326,11 @@
       if(showPreview) renderPreview($("#editor").value);
     });
 
-    // primo load “grezzo” (UTF-8 certo) per evitare accenti rotti
+    // Primo load “grezzo” da Pages (UTF-8 certo)
     (async ()=>{
       try{
-        const raw = await loadUTF8("/TlTr/"+path);
-        $("#editor").value = raw;
-        renderPreview(raw);
-      }catch{ /* ok, l’utente può premere Load dopo aver messo il token */ }
+        await loadFileIntoEditor();
+      }catch{ /* l’utente può premere Load dopo aver messo il token */ }
     })();
   </script>
 </body>
