@@ -1,31 +1,26 @@
 backend:
   name: github
-  repo: erasmdif/TlTr          # <-- usa l'owner/repo reali del sito che stai aprendo
+  repo: erasmdif/TlTr       # <— il repo giusto, con maiuscole corrette
   branch: main
-  auth_type: token             # login con PAT incollato nel browser
-
-site_url: https://erasmdif.github.io/TlTr
-
-publish_mode: editorial_workflow   # se vuoi PR; per commit diretti: simple
+  auth_type: token          # <— forza il login con PAT (niente Netlify)
+  # NON mettere base_url / site_id
 
 media_folder: "static/uploads"
-public_folder: "/static/uploads"
+public_folder: "/TlTr/static/uploads"   # <— importante su GitHub Pages
 
-locale: "it"
+publish_mode: editorial_workflow
 
 collections:
-  - name: "homepage"
+  - name: homepage
     label: "Avvisi Homepage"
     files:
       - file: "static/moduli/info/info_homepage.txt"
-        name: "info_homepage"
-        label: "Avvisi Homepage"
+        label: "Info Homepage"
+        name: info_homepage
         editor:
-          preview: false          # nessuna anteprima live (più snello)
+          preview: false
         fields:
-          - label: "Contenuto"
-            name: "body"
-            widget: "markdown"
-            buttons: [bold, italic, link, bulleted-list, numbered-list, code, quote]
-            # NB: questi componenti vengono registrati in admin/index.html
-            editor_components: [highlight, moda, invisiblelink]
+          - label: Contenuto
+            name: body
+            widget: markdown
+            buttons: [bold, italic, link, bulleted-list, numbered-list, code, heading-one, heading-two, quote]
