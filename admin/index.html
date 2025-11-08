@@ -9,8 +9,46 @@
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
 
-    <!-- Evita auto-init, inizializziamo noi -->
-    <script>window.CMS_MANUAL_INIT = true;</script>
+    <!-- ✅ Config INLINE: niente fetch di admin/config.yml -->
+    <script id="decap-cms-config" type="application/json">
+    {
+      "backend": {
+        "name": "github",
+        "repo": "erasmdif/TlTr",
+        "branch": "main",
+        "auth_type": "token"
+      },
+      "media_folder": "static/uploads",
+      "public_folder": "/TlTr/static/uploads",
+      "publish_mode": "editorial_workflow",
+      "collections": [
+        {
+          "name": "homepage",
+          "label": "Avvisi Homepage",
+          "files": [
+            {
+              "file": "static/moduli/info/info_homepage.txt",
+              "label": "Info Homepage",
+              "name": "info_homepage",
+              "editor": { "preview": false },
+              "fields": [
+                {
+                  "label": "Contenuto",
+                  "name": "body",
+                  "widget": "markdown",
+                  "buttons": [
+                    "bold","italic","link",
+                    "bulleted-list","numbered-list",
+                    "code","heading-one","heading-two","quote"
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+    </script>
 
     <!-- Decap CMS -->
     <script src="https://unpkg.com/decap-cms@3.3.0/dist/decap-cms.js"></script>
@@ -23,53 +61,17 @@
   </head>
   <body>
     <script>
-      (function boot(){
-        if(!window.CMS) return setTimeout(boot, 25);
+      // Registrazioni dopo il load della libreria
+      window.addEventListener('load', function () {
+        // Piccolo aiuto nella schermata token
+        CMS.registerPreviewStyle(`
+          .nc-githubAuthenticationPage-token .nc-githubAuthenticationPage-info::after{
+            content: "Usa un PAT fine-grained con 'Contents: Read/Write' sul repo erasmdif/TlTr e incollalo qui.";
+            display:block; margin-top:.5rem; font-size:.9em; color:#555;
+          }
+        `, { raw: true });
 
-        // 🔒 pulizia eventuale stato precedente / config globali
-        try{ localStorage.removeItem("netlify-cms-user"); }catch(e){}
-        try{ delete window.CMS_CONFIG; }catch(e){}
-
-        // ✅ CONFIG INLINE
-        const CONFIG = {
-          backend: {
-            name: "github",
-            repo: "erasmdif/TlTr",
-            branch: "main",
-            auth_type: "token"
-          },
-          media_folder: "static/uploads",
-          public_folder: "/TlTr/static/uploads",
-          publish_mode: "editorial_workflow",
-          collections: [
-            {
-              name: "homepage",
-              label: "Avvisi Homepage",
-              files: [
-                {
-                  file: "static/moduli/info/info_homepage.txt",
-                  label: "Info Homepage",
-                  name: "info_homepage",
-                  editor: { preview: false },
-                  fields: [
-                    {
-                      label: "Contenuto",
-                      name: "body",
-                      widget: "markdown",
-                      buttons: [
-                        "bold","italic","link",
-                        "bulleted-list","numbered-list",
-                        "code","heading-one","heading-two","quote"
-                      ]
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        };
-
-        // 🧠 Componenti custom
+        // Componenti custom: evidenzia
         CMS.registerEditorComponent({
           id: "highlight",
           label: "Evidenzia (!!)",
@@ -79,6 +81,8 @@
           toBlock: o => `!!${o.text}!!`,
           toPreview: o => `<span style="background:#ffe0b2;padding:0 .2em;border-radius:.2em">${CMS.escapeHtml(o.text)}</span>`
         });
+
+        // Link Modulo A
         CMS.registerEditorComponent({
           id: "moda",
           label: "Link Modulo A",
@@ -88,6 +92,8 @@
           toBlock: o => `[[modA|${o.label || "vedi Info Modulo A"}]]`,
           toPreview: o => `<em>Link Modulo A: ${CMS.escapeHtml(o.label || "vedi Info Modulo A")}</em>`
         });
+
+        // Link invisibile ((https://...))
         CMS.registerEditorComponent({
           id: "invisiblelink",
           label: "Link Invisibile",
@@ -98,26 +104,8 @@
           toPreview: o => `<span style="opacity:.6">🔗 ${CMS.escapeHtml(o.url)}</span>`
         });
 
-        // Messaggio guida nella form PAT
-        CMS.registerPreviewStyle(`
-          .nc-githubAuthenticationPage-token .nc-githubAuthenticationPage-info::after{
-            content: "Usa un PAT fine-grained con 'Contents: Read/Write' sul repo erasmdif/TlTr e incollalo qui.";
-            display:block; margin-top:.5rem; font-size:.9em; color:#555;
-          }
-        `, { raw: true });
-
-        console.log("[Decap] Init FORZATO con auth_type: token");
-
-        // ⚠️ QUI LA DIFFERENZA: disabilito il file esterno a livello TOP-LEVEL
-        CMS.init({
-          config: CONFIG,
-          load_config_file: false
-        });
-
-        setTimeout(()=> {
-          try { console.log("[Decap] Config effettiva:", CMS.getConfig()?.toJS?.()); } catch(e){}
-        }, 300);
-      })();
+        console.log("[Decap] Auto-init con config inline:", CMS.getConfig()?.toJS?.());
+      });
     </script>
   </body>
 </html>
