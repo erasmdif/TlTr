@@ -1,0 +1,45 @@
+backend:
+  name: github
+  repo: <OWNER>/<REPO>         # <-- Sostituisci: es. erasmo/tltr
+  branch: main                 # <-- o il tuo branch Pages
+  auth_type: token             # login via PAT nel browser
+  base_url: ""                 # nessun server auth
+
+site_url: https://<OWNER>.github.io/<REPO>/   # facoltativo ma utile per anteprime
+
+media_folder: "static/uploads" # dove caricare media via CMS
+public_folder: "/static/uploads"
+
+publish_mode: editorial_workflow  # crea PR (opzionale); per commit diretti usa 'simple'
+
+collections:
+  - name: homepage
+    label: "Avvisi Homepage"
+    files:
+      - file: "static/moduli/info/info_homepage.txt"   # puoi lasciarlo .txt
+        label: "Info Homepage"
+        name: info_homepage
+        editor:
+          preview: false        # niente anteprima live (veloce e sicuro con .txt)
+        fields:
+          - label: Contenuto
+            name: body
+            widget: markdown    # editor con toolbar (grassetto, link, elenchi…)
+            buttons:
+              - bold
+              - italic
+              - link
+              - bulleted-list
+              - numbered-list
+              - code
+              - heading-one
+              - heading-two
+              - quote
+            sanitizer:
+              # lascia passare i tuoi marcatori custom
+              blockElements: ['p', 'ul', 'ol', 'li', 'strong', 'em', 'a', 'code', 'blockquote', 'h1', 'h2']
+              inlineElements: ['strong', 'em', 'a', 'code', 'span']
+            editor_components:
+              - highlight
+              - moda
+              - invisiblelink
