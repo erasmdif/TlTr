@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <title>Editor Avvisi</title>
+    <meta name="robots" content="noindex" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Decap CMS -->
+    <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
+    <style>
+      /* piccolo ritocco */
+      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+      .Pane.Pane1 { min-width: 320px; }
+      .nc-loginPage-logo { display:none; } /* pulizia login */
+    </style>
+  </head>
+  <body>
+    <script>
+      // ============= Pulsanti custom =============
+      // 1) Evidenza: !!testo!!
+      CMS.registerEditorComponent({
+        id: "highlight",
+        label: "Evidenzia (!!)",
+        fields: [{ name: "text", label: "Testo", widget: "string" }],
+        pattern: /!!(.+?)!!/s,
+        fromBlock: match => ({ text: match[1] }),
+        toBlock: obj => `!!${obj.text}!!`,
+        toPreview: obj => `<span style="background:#ffe0b2;padding:0 .2em;border-radius:.2em">${CMS.escapeHtml(obj.text)}</span>`
+      });
+
+      // 2) Link speciale Modulo A: [[modA|etichetta]]
+      CMS.registerEditorComponent({
+        id: "moda",
+        label: "Link Modulo A",
+        fields: [{ name: "label", label: "Etichetta", widget: "string", default: "vedi Info Modulo A" }],
+        // pattern solo per riconoscimento (non obbligatorio per inserimento)
+        pattern: /\[\[modA\|([^\]]+)\]\]/,
+        fromBlock: m => ({ label: m[1] }),
+        toBlock: o => `[[modA|${o.label || "vedi Info Modulo A"}]]`,
+        toPreview: o => `<em>Link Modulo A: ${CMS.escapeHtml(o.label || "vedi Info Modulo A")}</em>`
+      });
+
+      // 3) Link invisibile: ((https://...))
+      //  - Il tuo JS lato sito trasformerà ((URL)) in <a class="ghost-link" href="URL" aria-label="Apri link"></a>
+      //  - Nell'editor mostriamo un'icona per far capire che esiste.
+      CMS.registerEditorComponent({
+        id: "invisiblelink",
+        label: "Link Invisibile",
+        fields: [{ name: "url", label: "URL", widget: "string" }],
+        pattern: /\(\((https?:\/\/[^\s)]+)\)\)/,
+        fromBlock: m => ({ url: m[1] }),
+        toBlock: o => `((${o.url}))`,
+        toPreview: o => `<span style="opacity:.6">🔗 ${CMS.escapeHtml(o.url)}</span>`
+      });
+
+      // ============= Login con Token: testo guida =============
+      CMS.registerPreviewStyle(`
+        .nc-githubAuthenticationPage-token .nc-githubAuthenticationPage-info::after{
+          content: "Per accedere: crea un Fine-grained PAT su GitHub con permessi Contents: Read/Write sul repo. Incollalo qui.";
+          display:block; margin-top:.5rem; font-size:.9em; color:#555;
+        }
+      `, { raw: true });
+
+      // Commit message di default
+      CMS.registerEventListener({
+        name: 'preSave',
+        handler: ({ entry }) => {
+          const title = entry.getIn(['data', 'title']) || 'Update info_homepage';
+          entry.setIn(['meta', 'commitMessage'], `cms: ${title}`);
+        }
+      });
+    </script>
+  </body>
+</html>
