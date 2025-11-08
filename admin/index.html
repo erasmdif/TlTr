@@ -5,14 +5,18 @@
     <title>Editor Avvisi</title>
     <meta name="robots" content="noindex" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Disabilita cache aggressiva del browser su Pages -->
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
 
-    <!-- Dì a Decap di NON auto-inizializzare -->
+    <!-- Forza l'init manuale: useremo la tua config.yml specificando il percorso -->
     <script>
       window.CMS_MANUAL_INIT = true;
     </script>
 
     <!-- Decap CMS -->
-    <script src="https://unpkg.com/decap-cms@^3.0.10/dist/decap-cms.js"></script>
+    <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
 
     <style>
       body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
@@ -22,56 +26,54 @@
   </head>
   <body>
     <script>
-      function initCMS() {
-        const CMS = window.CMS;
+      // Inizializza CMS caricando esplicitamente la config sotto /TlTr/admin/
+      CMS.init({ config: '/TlTr/admin/config.yml?v=2' });
 
-        // ============= Componenti custom =============
-        // 1) Evidenza: !!testo!!
-        CMS.registerEditorComponent({
-          id: "highlight",
-          label: "Evidenzia (!!)",
-          fields: [{ name: "text", label: "Testo", widget: "string" }],
-          pattern: /!!(.+?)!!/s,
-          fromBlock: m => ({ text: m[1] }),
-          toBlock: o => `!!${o.text}!!`,
-          toPreview: o =>
-            `<span style="background:#ffe0b2;padding:0 .2em;border-radius:.2em">${CMS.escapeHtml(o.text)}</span>`
-        });
+      // ============= Pulsanti custom (come prima) =============
+      CMS.registerEditorComponent({
+        id: "highlight",
+        label: "Evidenzia (!!)",
+        fields: [{ name: "text", label: "Testo", widget: "string" }],
+        pattern: /!!(.+?)!!/s,
+        fromBlock: match => ({ text: match[1] }),
+        toBlock: obj => `!!${obj.text}!!`,
+        toPreview: obj => `<span style="background:#ffe0b2;padding:0 .2em;border-radius:.2em">${CMS.escapeHtml(obj.text)}</span>`
+      });
 
-        // 2) Link Modulo A: [[modA|etichetta]]
-        CMS.registerEditorComponent({
-          id: "moda",
-          label: "Link Modulo A",
-          fields: [{ name: "label", label: "Etichetta", widget: "string", default: "vedi Info Modulo A" }],
-          pattern: /\[\[modA\|([^\]]+)\]\]/,
-          fromBlock: m => ({ label: m[1] }),
-          toBlock: o => `[[modA|${o.label || "vedi Info Modulo A"}]]`,
-          toPreview: o => `<em>Link Modulo A: ${CMS.escapeHtml(o.label || "vedi Info Modulo A")}</em>`
-        });
+      CMS.registerEditorComponent({
+        id: "moda",
+        label: "Link Modulo A",
+        fields: [{ name: "label", label: "Etichetta", widget: "string", default: "vedi Info Modulo A" }],
+        pattern: /\[\[modA\|([^\]]+)\]\]/,
+        fromBlock: m => ({ label: m[1] }),
+        toBlock: o => `[[modA|${o.label || "vedi Info Modulo A"}]]`,
+        toPreview: o => `<em>Link Modulo A: ${CMS.escapeHtml(o.label || "vedi Info Modulo A")}</em>`
+      });
 
-        // 3) Link invisibile: ((https://...))
-        CMS.registerEditorComponent({
-          id: "invisiblelink",
-          label: "Link Invisibile",
-          fields: [{ name: "url", label: "URL", widget: "string" }],
-          pattern: /\(\((https?:\/\/[^\s)]+)\)\)/,
-          fromBlock: m => ({ url: m[1] }),
-          toBlock: o => `((${o.url}))`,
-          toPreview: o => `<span style="opacity:.6">🔗 ${CMS.escapeHtml(o.url)}</span>`
-        });
+      CMS.registerEditorComponent({
+        id: "invisiblelink",
+        label: "Link Invisibile",
+        fields: [{ name: "url", label: "URL", widget: "string" }],
+        pattern: /\(\((https?:\/\/[^\s)]+)\)\)/,
+        fromBlock: m => ({ url: m[1] }),
+        toBlock: o => `((${o.url}))`,
+        toPreview: o => `<span style="opacity:.6">🔗 ${CMS.escapeHtml(o.url)}</span>`
+      });
 
-        // NIENTE registerPreviewStyle qui: la preview è disattivata nel config.yml (preview:false)
+      CMS.registerPreviewStyle(`
+        .nc-githubAuthenticationPage-token .nc-githubAuthenticationPage-info::after{
+          content: "Per accedere: crea un Fine-grained PAT su GitHub con permessi Contents: Read/Write sul repo. Incollalo qui.";
+          display:block; margin-top:.5rem; font-size:.9em; color:#555;
+        }
+      `, { raw: true });
 
-        // Inizializza Decap (legge automaticamente /admin/config.yml)
-        CMS.init();
-      }
-
-      // Assicurati che Decap sia caricato prima di registrare i componenti
-      if (window.CMS) {
-        initCMS();
-      } else {
-        window.addEventListener('load', initCMS);
-      }
+      CMS.registerEventListener({
+        name: 'preSave',
+        handler: ({ entry }) => {
+          const title = entry.getIn(['data', 'title']) || 'Update info_homepage';
+          entry.setIn(['meta', 'commitMessage'], `cms: ${title}`);
+        }
+      });
     </script>
   </body>
 </html>
