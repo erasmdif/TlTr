@@ -5,33 +5,32 @@
     <title>Editor Avvisi</title>
     <meta name="robots" content="noindex" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-
-    <!-- Evita cache aggressive su Pages -->
     <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
 
-    <!-- Inizializzazione manuale -->
+    <!-- Evita auto-init, inizializziamo noi -->
     <script>window.CMS_MANUAL_INIT = true;</script>
 
-    <!-- Decap CMS (pinnato) -->
+    <!-- Decap CMS -->
     <script src="https://unpkg.com/decap-cms@3.3.0/dist/decap-cms.js"></script>
 
     <style>
       body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
       .Pane.Pane1 { min-width: 320px; }
-      .nc-loginPage-logo { display:none; } /* pulizia login */
+      .nc-loginPage-logo { display:none; }
     </style>
   </head>
   <body>
     <script>
       (function boot(){
-        if (!window.CMS) return setTimeout(boot, 25);
+        if(!window.CMS) return setTimeout(boot, 25);
 
-        // 1) pulizia di eventuale sessione oauth cacheata
+        // 🔒 pulizia eventuale stato precedente / config globali
         try{ localStorage.removeItem("netlify-cms-user"); }catch(e){}
+        try{ delete window.CMS_CONFIG; }catch(e){}
 
-        // 2) CONFIG INLINE — niente file esterno
+        // ✅ CONFIG INLINE
         const CONFIG = {
           backend: {
             name: "github",
@@ -39,13 +38,9 @@
             branch: "main",
             auth_type: "token"
           },
-          // IMPORTANTISSIMO: NON caricare config.yml esterno
-          load_config_file: false,
-
           media_folder: "static/uploads",
           public_folder: "/TlTr/static/uploads",
           publish_mode: "editorial_workflow",
-
           collections: [
             {
               name: "homepage",
@@ -74,7 +69,7 @@
           ]
         };
 
-        // --- Componenti custom (come stabilito) ---
+        // 🧠 Componenti custom
         CMS.registerEditorComponent({
           id: "highlight",
           label: "Evidenzia (!!)",
@@ -103,21 +98,25 @@
           toPreview: o => `<span style="opacity:.6">🔗 ${CMS.escapeHtml(o.url)}</span>`
         });
 
-        // Messaggino guida nella pagina token
+        // Messaggio guida nella form PAT
         CMS.registerPreviewStyle(`
           .nc-githubAuthenticationPage-token .nc-githubAuthenticationPage-info::after{
-            content: "Usa un Fine-grained PAT con permesso 'Contents: Read/Write' sul repo erasmdif/TlTr, poi incollalo qui.";
+            content: "Usa un PAT fine-grained con 'Contents: Read/Write' sul repo erasmdif/TlTr e incollalo qui.";
             display:block; margin-top:.5rem; font-size:.9em; color:#555;
           }
         `, { raw: true });
 
-        // Init (SOLO INLINE – niente config.yml)
-        CMS.init({ config: CONFIG });
+        console.log("[Decap] Init FORZATO con auth_type: token");
 
-        // debug: stampo la config effettiva
+        // ⚠️ QUI LA DIFFERENZA: disabilito il file esterno a livello TOP-LEVEL
+        CMS.init({
+          config: CONFIG,
+          load_config_file: false
+        });
+
         setTimeout(()=> {
           try { console.log("[Decap] Config effettiva:", CMS.getConfig()?.toJS?.()); } catch(e){}
-        }, 200);
+        }, 300);
       })();
     </script>
   </body>
