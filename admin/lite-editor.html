@@ -34,7 +34,7 @@
 
   <!-- Banner guida -->
   <div class="helpbar">
-    Clicca <a id="openTokenTutorial">QUI</a> se non hai ancora fatto la procedura per poter modificare gli avvisi. <br/>
+    Clicca <a id="openTokenTutorial">QUI</a> se non hai ancora fatto la procedura per poter modificare gli avvisi. DA EFFETTUARE SOLO LA PRIMA VOLTA O A TOKEN SCADUTO<br/>
     Clicca <a id="openEditorTutorial">QUI</a> per vedere le linee guida su come editare.
   </div>
 
@@ -77,18 +77,23 @@
         <strong>1) Crea un account GitHub</strong> (se non ce l’hai): <a href="https://github.com/signup" target="_blank" rel="noopener">github.com/signup</a>.
       </div>
       <div class="step">
-        <strong>2) Invia il tuo username</strong> a <a href="mailto:erasmo.difonso@libero.it">erasmo.difonso@libero.it</a> o su WhatsApp, e attendi l’invito al repo <em>TlTr</em>.
+        <strong>2) Completata la procedura di sign-up, invia il tuo username</strong> a <a href="mailto:erasmo.difonso@libero.it">erasmo.difonso@libero.it</a> o su WhatsApp, e attendi l’invito alla Repository <em>TlTr</em>.
       </div>
       <div class="step">
-        <strong>3) Apri la sezione dei token</strong> &nbsp;<span class="tok">Settings → Developer settings → Personal access tokens → Fine-grained tokens</span><br>
+        <strong>3) Dalla tua immagine del profilo, quindi, apri la sezione per creare token</strong> &nbsp;<span class="tok">Settings → Developer settings → Personal access tokens → Fine-grained tokens</span><br>
         <img src="/TlTr/static/images/tutorial_editor/token_section.png" alt="Sezione token" loading="lazy">
       </div>
+        <div class="step">
+          <strong>4) Crea un token <u>Classic</u></strong>:
+          clicca <em>Generate new token (classic)</em>, imposta una scadenza (RICORDA: scaduto il token, dovrai crearne un altro per tornare a modificare),
+          quindi seleziona la casella di spunta di fianco a <b>"repo"</b> (Full control of private repositories).<br>
+          <small class="muted">
+            Nota: se il repo fosse pubblico basterebbe <b>public_repo</b>, ma <b>repo</b> va bene sempre.
+          </small><br>
+          <img src="/TlTr/static/images/tutorial_editor/token_creation.png" alt="Creazione token (Classic)" loading="lazy">
+        </div>
       <div class="step">
-        <strong>4) Crea un token fine-grained</strong> con permessi <em>Repository access</em> → “Only select repositories” → <b>TlTr</b>; <em>Permissions</em> → <b>Contents: Read and write</b>; scegli scadenza.<br>
-        <img src="/TlTr/static/images/tutorial_editor/token_creation.png" alt="Creazione token" loading="lazy">
-      </div>
-      <div class="step">
-        <strong>5) Copia il token</strong> (si vede una sola volta) e incollalo nel campo “GitHub token” di questa pagina, poi premi <b>Load</b>.<br>
+        <strong>5) Copia il token</strong> (ATTENZIONE: il sito te lo mostrerà una volta sola, quindi salvalo da qualche parte)<br>
         <img src="/TlTr/static/images/tutorial_editor/token_usage.png" alt="Uso token" loading="lazy">
       </div>
     </div>
@@ -102,7 +107,7 @@
     </div>
     <div class="dlg-body">
       <div class="step">
-        <strong>A) Carica il testo</strong> → incolla il token e premi <b>Load</b>. Il contenuto di <code>static/moduli/info/info_homepage.txt</code> viene caricato nell’editor.
+        <strong>A) Carica il testo</strong> → incolla il token che hai ottenuto con la procedura precedente. Il contenuto della sezione note viene caricato nell’editor.
       </div>
       <div class="step">
         <strong>B) Modifica con la toolbar</strong><br>
