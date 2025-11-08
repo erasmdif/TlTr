@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TlTr — Mini Editor (GitHub API)</title>
+<style>
+  :root { --bg:#f6f8fa; --fg:#111; --acc:#ff7a00; --mut:#666; }
+  html,body{height:100%}
+  body{margin:0;font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--fg);}
+  header{display:flex;align-items:center;gap:12px;padding:12px 16px;background:#fff;border-bottom:1px solid #e5e7eb;position:sticky;top:0;z-index:10}
+  header h1{font-size:16px;margin:0;font-weight:600}
+  .row{display:flex;gap:12px;flex-wrap:wrap}
+  .card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:12px}
+  .grow{flex:1 1 320px}
+  input[type="text"],input[type="password"],input[type="url"],textarea{
+    width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:10px;background:#fff;font:inherit;
+  }
+  textarea{min-height:52vh;white-space:pre-wrap}
+  .toolbar{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+  .toolbar button{border:1px solid #d1d5db;background:#fff;border-radius:10px;padding:6px 10px;cursor:pointer}
+  .toolbar button:hover{border-color:#bbb}
+  .pill{padding:6px 10px;border-radius:999px;background:#f0f2f5;border:1px solid #e5e7eb}
+  .muted{color:var(--mut)}
+  .btn{padding:8px 14px;border-radius:10px;border:1px solid #d1d5db;background:#fff;cursor:pointer}
+  .btn.primary{background:var(--acc);border-color:var(--acc);color:#fff}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .right{margin-left:auto}
+  .status{font-size:13px}
+  .footer{display:flex;gap:8px;align-items:center;margin-top:8px}
+  .small{font-size:12px;color:var(--mut)}
+  .ok{color:#12805c}
+  .err{color:#b00020}
+  .preview{white-space:pre-wrap;border:1px dashed #e5e7eb;padding:10px;border-radius:10px;background:#fcfcfc;max-height:30vh;overflow:auto}
+</style>
+</head>
+<body>
+<header>
+  <h1>TlTr — Mini Editor</h1>
+  <span class="pill">Repo: <strong>erasmdif/TlTr</strong> · Branch: <strong>main</strong></span>
+  <span class="pill">File: <code>static/moduli/info/info_homepage.txt</code></span>
+</header>
+
+<main class="row" style="padding:12px 16px">
+  <section class="card" style="flex:1 1 280px;max-width:480px">
+    <h2 style="margin:4px 0 8px">Accesso</h2>
+    <label class="small">GitHub Token (PAT, fine-grained, “Repository contents: Read/Write”)</label>
+    <input id="token" type="password" placeholder="ghp_xxx oppure github_pat_xxx">
+    <div class="footer">
+      <button class="btn" id="btnLoad">Load</button>
+      <button class="btn" id="btnClear">Svuota token</button>
+      <span id="status" class="status muted right">pronto</span>
+    </div>
+    <p class="small" style="margin-top:10px">
+      Il token viene salvato <em>solo</em> in <strong>sessionStorage</strong> per questa scheda.
+    </p>
+    <details style="margin-top:6px">
+      <summary class="small">Opzioni avanzate</summary>
+      <div class="row" style="margin-top:6px">
+        <div class="grow">
+          <label class="small">Owner</label>
+          <input id="owner" type="text" value="erasmdif">
+        </div>
+        <div class="grow">
+          <label class="small">Repo</label>
+          <input id="repo" type="text" value="TlTr">
+        </div>
+        <div class="grow">
+          <label class="small">Branch</label>
+          <input id="branch" type="text" value="main">
+        </div>
+        <div class="grow" style="flex-basis:100%">
+          <label class="small">Path file</label>
+          <input id="filepath" type="text" value="static/moduli/info/info_homepage.txt">
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <section class="card grow">
+    <div class="row" style="align-items:flex-end">
+      <div class="grow">
+        <h2 style="margin:4px 0 8px">Contenuto</h2>
+        <div class="toolbar">
+          <button data-wrap="**|**"><b>B</b></button>
+          <button data-wrap="*|*"><i>I</i></button>
+          <button data-link>Link</button>
+          <button data-prefix="- ">• Elenco</button>
+          <button data-ol>1. Elenco</button>
+          <button data-prefix="> ">Citazione</button>
+          <button data-wrap="!!|!!">Evidenzia (!!)</button>
+          <button data-moda>[[modA|…]]</button>
+          <button data-invlink>((link))</button>
+          <button data-wrap="`|`">Code</button>
+          <button data-prefix="# ">H1</button>
+          <button data-prefix="## ">H2</button>
+        </div>
+      </div>
+      <div>
+        <button class="btn" id="btnPreview">Anteprima testo</button>
+        <button class="btn primary" id="btnSave" disabled>Save</button>
+      </div>
+    </div>
+    <textarea id="editor" spellcheck="false" placeholder="- scrivi qui -"></textarea>
+    <div id="preview" class="preview" hidden></div>
+    <div class="footer">
+      <input id="commitMsg" type="text" placeholder="Commit message" value="cms: update info_homepage">
+      <span id="saveStatus" class="small right"></span>
+    </div>
+  </section>
+</main>
+
+<script>
+/* ====== Utils ====== */
+const $ = s => document.querySelector(s);
+
+function setStatus(msg, cls="muted"){ const el=$("#status"); el.className="status "+cls; el.textContent=msg; }
+function setSaveStatus(msg, cls="small"){ const el=$("#saveStatus"); el.className=cls; el.textContent=msg; }
+
+function b64encode(str){
+  return btoa(unescape(encodeURIComponent(str)));
+}
+function b64decode(b64){
+  try { return decodeURIComponent(escape(atob(b64))); } catch { return atob(b64); }
+}
+
+function getSel(el){
+  return { start: el.selectionStart, end: el.selectionEnd, val: el.value.slice(el.selectionStart, el.selectionEnd) };
+}
+function wrapSelection(el, before, after){
+  const {start,end,val}=getSel(el);
+  const pre=el.value.slice(0,start), post=el.value.slice(end);
+  const ins = before + val + after;
+  el.value = pre + ins + post;
+  el.focus();
+  el.selectionStart = start + before.length;
+  el.selectionEnd   = start + before.length + val.length;
+}
+function prefixLines(el, prefix){
+  const {start,end}=getSel(el);
+  const val=el.value;
+  const pre=val.slice(0,start), sel=val.slice(start,end), post=val.slice(end);
+  const lines = sel.split(/\n/).map(l=> l ? (prefix + l) : l );
+  const out = lines.join("\n");
+  el.value = pre + out + post;
+  const added = lines.length*prefix.length;
+  el.selectionStart = start;
+  el.selectionEnd = end + added;
+  el.focus();
+}
+
+/* ====== State ====== */
+const state = { sha:null };
+
+const tokenInput = $("#token");
+const ownerInput = $("#owner");
+const repoInput  = $("#repo");
+const branchInput= $("#branch");
+const fileInput  = $("#filepath");
+const editor     = $("#editor");
+const btnSave    = $("#btnSave");
+const btnLoad    = $("#btnLoad");
+const btnClear   = $("#btnClear");
+const previewBox = $("#preview");
+
+(function restore(){
+  const t = sessionStorage.getItem("tltr_token");
+  if(t) tokenInput.value = t;
+})();
+
+/* ====== Toolbar actions ====== */
+document.addEventListener("click", (e)=>{
+  const t = e.target.closest("button");
+  if(!t) return;
+
+  if(t.dataset.wrap){
+    const [b,a] = t.dataset.wrap.split("|");
+    wrapSelection(editor, b, a);
+  }
+  if(t.dataset.prefix){
+    prefixLines(editor, t.dataset.prefix);
+  }
+  if(t.hasAttribute("data-ol")){
+    const {start,end}=getSel(editor);
+    const sel = editor.value.slice(start,end);
+    const lines = sel.split(/\n/).map((l,i)=> l ? `${i+1}. ${l}` : l );
+    const pre = editor.value.slice(0,start), post=editor.value.slice(end);
+    editor.value = pre + lines.join("\n") + post;
+    editor.selectionStart=start; editor.selectionEnd = start + lines.join("\n").length;
+  }
+  if(t.hasAttribute("data-link")){
+    const url = prompt("URL:");
+    if(!url) return;
+    const {val}=getSel(editor);
+    const label = val || "link";
+    wrapSelection(editor, `[${label}](${url})`, "");
+  }
+  if(t.hasAttribute("data-moda")){
+    wrapSelection(editor, "[[modA|vedi Info Modulo A]]", "");
+  }
+  if(t.hasAttribute("data-invlink")){
+    const url = prompt("URL (invisibile):");
+    if(!url) return;
+    wrapSelection(editor, `((${url}))`, "");
+  }
+  if(t.id==="btnPreview"){
+    if(previewBox.hidden){
+      previewBox.textContent = editor.value;
+      previewBox.hidden = false;
+      t.textContent = "Nascondi anteprima";
+    }else{
+      previewBox.hidden = true;
+      t.textContent = "Anteprima testo";
+    }
+  }
+});
+
+/* ====== GitHub API ====== */
+async function ghGet(path, token){
+  const r = await fetch(`https://api.github.com${path}`, {
+    headers: {
+      "Accept":"application/vnd.github+json",
+      ...(token?{ "Authorization":"Bearer "+token }:{})
+    },
+    cache:"no-store"
+  });
+  if(!r.ok) throw new Error(r.status+" "+r.statusText);
+  return r.json();
+}
+async function ghPut(path, body, token){
+  const r = await fetch(`https://api.github.com${path}`, {
+    method:"PUT",
+    headers:{
+      "Accept":"application/vnd.github+json",
+      "Content-Type":"application/json",
+      "Authorization":"Bearer "+token
+    },
+    body: JSON.stringify(body)
+  });
+  if(!r.ok){
+    const txt = await r.text().catch(()=> "");
+    throw new Error(r.status+" "+r.statusText+" — "+txt);
+  }
+  return r.json();
+}
+
+/* Load file */
+btnLoad.addEventListener("click", async ()=>{
+  const token = tokenInput.value.trim();
+  if(!token){ alert("Inserisci il token GitHub (PAT)."); return; }
+  sessionStorage.setItem("tltr_token", token);
+
+  const owner = ownerInput.value.trim();
+  const repo  = repoInput.value.trim();
+  const branch= branchInput.value.trim();
+  const path  = fileInput.value.trim();
+
+  btnLoad.disabled = true; setStatus("Carico file…");
+  try{
+    const data = await ghGet(`/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}?ref=${encodeURIComponent(branch)}`, token);
+    if(!data || !data.content) throw new Error("Contenuto mancante");
+    const txt = b64decode(data.content.replace(/\n/g,""));
+    editor.value = txt;
+    state.sha = data.sha;
+    btnSave.disabled = false;
+    setStatus("File caricato ✔", "ok");
+    setSaveStatus("");
+  }catch(err){
+    console.error(err);
+    setStatus("Errore nel caricamento: "+err.message, "err");
+    btnSave.disabled = true;
+  }finally{
+    btnLoad.disabled = false;
+  }
+});
+
+/* Save file (commit on branch) */
+btnSave.addEventListener("click", async ()=>{
+  const token = tokenInput.value.trim();
+  if(!token){ alert("Token mancante."); return; }
+  const owner = ownerInput.value.trim();
+  const repo  = repoInput.value.trim();
+  const branch= branchInput.value.trim();
+  const path  = fileInput.value.trim();
+  const msg   = $("#commitMsg").value.trim() || "cms: update info_homepage";
+
+  const contentB64 = b64encode(editor.value);
+
+  btnSave.disabled = true; setSaveStatus("Salvo…");
+  try{
+    const body = {
+      message: msg,
+      content: contentB64,
+      branch: branch,
+      sha: state.sha || undefined
+    };
+    const res = await ghPut(`/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}`, body, token);
+    state.sha = res.content?.sha || null;
+    setSaveStatus("Salvato ✔", "small ok");
+  }catch(err){
+    console.error(err);
+    setSaveStatus("Errore: "+err.message, "small err");
+  }finally{
+    btnSave.disabled = false;
+  }
+});
+
+/* Clear token */
+btnClear.addEventListener("click", ()=>{
+  sessionStorage.removeItem("tltr_token");
+  tokenInput.value = "";
+  setStatus("Token cancellato. Inseriscilo di nuovo per operare.");
+});
+</script>
+</body>
+</html>
