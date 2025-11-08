@@ -1,0 +1,680 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <title>Calendar Editor – TlTr</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+  <style>
+    :root{
+      --brand:#ff7f00; --panel:#fff; --bd:#e3e6ef; --bg:#f6f7fb; --text:#1e2a37;
+      --muted:#6b7a8c; --ok:#2e7d32; --bad:#c62828;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+    header{position:sticky;top:0;z-index:3;background:#fff;border-bottom:1px solid var(--bd);padding:10px 12px;display:flex;gap:10px;align-items:center}
+    .title{font-weight:800}
+    .grow{flex:1}
+    .btn{border:1px solid var(--bd);background:#fff;border-radius:8px;padding:8px 10px;cursor:pointer}
+    .btn.primary{background:var(--brand);color:#fff;border-color:var(--brand)}
+    .btn.danger{background:#ffecec;border-color:#ffc9c9;color:#9b1c1c}
+    .btn.small{padding:6px 8px;font-size:.9rem;border-radius:7px}
+    input[type="text"],input[type="time"],input[type="date"],select,textarea{
+      border:1px solid var(--bd);border-radius:8px;padding:8px 10px;background:#fff;width:100%;
+    }
+    textarea{min-height:120px;resize:vertical}
+    .row{max-width:1200px;margin:0 auto;padding:14px;display:grid;grid-template-columns:340px 1fr;gap:14px}
+    @media (max-width:1024px){.row{grid-template-columns:1fr}}
+    .card{background:var(--panel);border:1px solid var(--bd);border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.04);overflow:hidden}
+    .card .head{padding:10px 12px;border-bottom:1px solid var(--bd);font-weight:800;display:flex;align-items:center;gap:8px}
+    .card .body{padding:12px}
+    .helpbar{background:#fff6ea;border-bottom:1px solid #ffd9a6;color:#533100;padding:8px 12px}
+    .helpbar a{font-weight:700;color:#c14a00;text-decoration:underline;cursor:pointer}
+
+    /* Calendar (sinistra) */
+    .cal-head{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:8px}
+    .cal-nav{display:flex;gap:6px}
+    .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+    .dow{font-size:12px;color:var(--muted);text-align:center}
+    .day{min-height:66px;border:1px solid var(--bd);border-radius:10px;padding:6px;cursor:pointer;background:#fff;display:flex;flex-direction:column;gap:6px}
+    .day--other{opacity:.5}
+    .day.is-selected{outline:2px solid var(--brand)}
+    .day .n{font-weight:800;color:#334}
+    .chip{display:inline-block;font-size:11px;border-radius:999px;padding:2px 6px;border:1px solid #dbe4f0;background:#f6f9ff;color:#315a9d}
+    .list{margin-top:10px;display:flex;flex-direction:column;gap:8px}
+    .item{border:1px solid var(--bd);border-radius:10px;padding:8px;background:#fff;cursor:pointer}
+    .item .cap{font-size:12px;color:var(--muted)}
+    .item:hover{background:#f9fbff}
+
+    /* Form (destra) */
+    .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+    .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+    .grid-1{display:grid;grid-template-columns:1fr;gap:10px}
+    label{font-size:.9rem;color:#3a4a5a}
+    .muted{color:var(--muted)}
+    .hint{font-size:.9rem;color:#6a3d00;background:#fff3e0;border:1px solid #ffd6a8;border-radius:8px;padding:8px 10px}
+    .map-wrap{border:1px solid var(--bd);border-radius:10px;overflow:hidden;height:300px}
+    #map{height:100%}
+    .row-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:10px}
+    dialog{border:none;border-radius:12px;max-width:820px;width:min(92vw,820px);padding:0;box-shadow:0 8px 40px rgba(0,0,0,.25)}
+    dialog .dlg-head{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid #eee}
+    dialog .dlg-body{padding:16px;max-height:70vh;overflow:auto}
+    .tok{font:600 12px ui-monospace,monospace;background:#111;color:#0f0;padding:2px 6px;border-radius:6px}
+    .ok{color:var(--ok)} .bad{color:var(--bad)}
+  </style>
+</head>
+<body>
+  <div class="helpbar">
+    Clicca <a id="openTokenTutorial">QUI</a> se non hai ancora fatto la procedura per modificare il calendario.
+  </div>
+  <header>
+    <span class="title">Calendar Editor</span>
+    <span class="muted">Repo: <code>erasmdif/TlTr</code></span>
+    <span class="grow"></span>
+    <label class="muted">GitHub token:</label>
+    <input id="ghToken" type="password" placeholder="incolla PAT (classic: repo)" style="width:280px;padding:8px;border:1px solid #d4d8e3;border-radius:8px">
+    <button id="btnLoad" class="btn">Load</button>
+    <button id="btnNew" class="btn">Nuovo</button>
+    <button id="btnSave" class="btn primary">Salva</button>
+  </header>
+
+  <div class="row">
+    <!-- SINISTRA: calendario + lista eventi del giorno -->
+    <section class="card">
+      <div class="head">Calendario</div>
+      <div class="body">
+        <div class="cal-head">
+          <div class="cal-nav">
+            <button id="prevMonth" class="btn small">‹</button>
+            <button id="nextMonth" class="btn small">›</button>
+          </div>
+          <div id="monthLabel" style="font-weight:800"></div>
+          <div class="muted small">clicca per selezionare una data</div>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+
+        <div class="list" id="dayList"></div>
+      </div>
+    </section>
+
+    <!-- DESTRA: form evento -->
+    <section class="card">
+      <div class="head">Evento</div>
+      <div class="body">
+        <div class="grid">
+          <div>
+            <label>Evento</label>
+            <input id="f_evento" type="text" placeholder="Titolo evento">
+          </div>
+          <div>
+            <label>Tipo</label>
+            <select id="f_tipo">
+              <option value="evento">evento</option>
+              <option value="convegno">convegno</option>
+              <option value="seminario">seminario</option>
+              <option value="cena">cena</option>
+            </select>
+          </div>
+
+          <div>
+            <label>Presenza</label>
+            <select id="f_presenza">
+              <option value="">—</option>
+              <option value="si">si</option>
+              <option value="preferibile">preferibile</option>
+              <option value="no">no</option>
+            </select>
+          </div>
+          <div>
+            <label>Sicuro</label>
+            <select id="f_sicuro">
+              <option value="">—</option>
+              <option value="si">si</option>
+              <option value="no">no</option>
+            </select>
+          </div>
+
+          <div>
+            <label>Dal</label>
+            <input id="f_date_from" type="date">
+          </div>
+          <div>
+            <label>Al</label>
+            <input id="f_date_to" type="date">
+          </div>
+
+          <div>
+            <label>Orario inizio</label>
+            <input id="f_ora_start" type="text" placeholder="es. 09.30 AM">
+          </div>
+          <div>
+            <label>Orario fine</label>
+            <input id="f_ora_end" type="text" placeholder="es. 18.00 PM">
+          </div>
+
+          <div>
+            <label>Città (da comuni.geojson)</label>
+            <input id="f_citta" list="dlComuni" placeholder="Seleziona comune">
+            <datalist id="dlComuni"></datalist>
+          </div>
+          <div>
+            <label>Luogo (nome)</label>
+            <input id="f_luogo" list="dlLuoghi" placeholder="Nome luogo (corrisponde a luoghi.geojson)">
+            <datalist id="dlLuoghi"></datalist>
+          </div>
+
+          <div class="grid-1">
+            <label>Indirizzo (per luoghi.geojson)</label>
+            <input id="f_indirizzo" type="text" placeholder="es. Via ...">
+          </div>
+        </div>
+
+        <div class="grid" style="margin-top:10px">
+          <div>
+            <label>Locandina (png/jpg/pdf)</label>
+            <input id="f_locandina" type="file" accept=".png,.jpg,.jpeg,.webp,.pdf">
+            <div class="muted" id="f_locandina_name"></div>
+          </div>
+          <div>
+            <label>Programma (pdf/png/jpg)</label>
+            <input id="f_programma" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp">
+            <div class="muted" id="f_programma_name"></div>
+          </div>
+        </div>
+
+        <div class="grid-1" style="margin-top:10px">
+          <label>Link utili</label>
+          <input id="f_link" type="text" placeholder="https://...">
+        </div>
+
+        <div class="grid-1" style="margin-top:10px">
+          <label>Note</label>
+          <textarea id="f_note" placeholder="Testo note (supporta marcatori semplici)"></textarea>
+        </div>
+
+        <div class="grid-3" style="margin-top:10px">
+          <div>
+            <label>Lat</label>
+            <input id="f_lat" type="text" placeholder="41.12">
+          </div>
+          <div>
+            <label>Lon</label>
+            <input id="f_lon" type="text" placeholder="16.86">
+          </div>
+          <div style="display:flex;align-items:flex-end">
+            <button id="btnMapPick" class="btn small">Scegli sulla mappa</button>
+          </div>
+        </div>
+
+        <div class="map-wrap" id="mapWrap" style="margin-top:8px" hidden>
+          <div id="map"></div>
+        </div>
+
+        <div class="hint" style="margin-top:10px">
+          Al salvataggio:
+          <ul>
+            <li>aggiorno/aggiungo la riga su <code>static/data/eventi.csv</code></li>
+            <li>aggiorno/aggiungo la feature su <code>static/data/luoghi.geojson</code> con <em>nome</em>, <em>indirizzo</em> e coordinate</li>
+            <li>carico file in <code>static/locandine_programmi/</code> (se selezionati)</li>
+          </ul>
+        </div>
+
+        <div class="row-actions">
+          <input id="f_commit" type="text" placeholder="Messaggio commit (opz.)" style="max-width:360px">
+          <button id="btnDelete" class="btn danger">Elimina evento</button>
+          <button id="btnSave2" class="btn primary">Salva</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Tutorial token -->
+  <dialog id="dlgToken">
+    <div class="dlg-head">
+      <strong>Procedura abilitazione (una tantum)</strong>
+      <button class="btn" data-close>Chiudi</button>
+    </div>
+    <div class="dlg-body">
+      <p><strong>1)</strong> Crea (se serve) un account GitHub: <a href="https://github.com/signup" target="_blank" rel="noopener">github.com/signup</a></p>
+      <p><strong>2)</strong> Invia il tuo username a <a href="mailto:erasmo.difonso@libero.it">erasmo.difonso@libero.it</a> o su WhatsApp e attendi l’invito al repo <em>TlTr</em>.</p>
+      <p><strong>3)</strong> Vai a <span class="tok">Settings → Developer settings → Personal access tokens → <b>Tokens (classic)</b></span></p>
+      <img src="/TlTr/static/images/tutorial_editor/token_section.png" alt="Sezione token (Classic)" loading="lazy">
+      <p><strong>4)</strong> Clicca <em>Generate new token (classic)</em>, scegli una scadenza e spunta lo scope <b>repo</b> (Full control of private repositories). Per repo pubblico basterebbe <b>public_repo</b>, ma <b>repo</b> funziona sempre.</p>
+      <img src="/TlTr/static/images/tutorial_editor/token_creation.png" alt="Creazione token (Classic)" loading="lazy">
+      <p><strong>5)</strong> Copia il token (si vede una sola volta), incollalo nel campo “GitHub token” qui sopra e premi <b>Load</b>.</p>
+      <img src="/TlTr/static/images/tutorial_editor/token_usage.png" alt="Uso token" loading="lazy">
+    </div>
+  </dialog>
+
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
+  <script>
+    /* ====== Config ====== */
+    const OWNER="erasmdif", REPO="TlTr", BRANCH="main";
+    const PREFIX="/TlTr/"; // path pubblico su Pages
+    const PATH_EVENTI="static/data/eventi.csv";
+    const PATH_LUOGHI="static/data/luoghi.geojson";
+    const PATH_COMUNI="static/data/comuni.geojson";
+    const PATH_MEDIA ="static/locandine_programmi/";
+
+    /* ====== Utils ====== */
+    const $=(s,r=document)=>r.querySelector(s);
+    const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+    function pad2(n){return String(n).padStart(2,"0")}
+    function toInputDate(d){ // Date -> "YYYY-MM-DD"
+      return `${d.getUTCFullYear()}-${pad2(d.getUTCMonth()+1)}-${pad2(d.getUTCDate())}`;
+    }
+    function parseMDY2Y(s){ if(!s) return null; const [m,d,yRaw]=s.split("/").map(x=>x?.trim());
+      let y=(yRaw||"").length===2?(+yRaw<=49?2000+ +yRaw:1900+ +yRaw):+yRaw;
+      if(!m||!d||!y) return null; const dt=new Date(Date.UTC(y,+m-1,+d)); return isNaN(+dt)?null:dt;
+    }
+    function fromInputToMDY2(input){ // "YYYY-MM-DD" -> "MM/DD/YY"
+      if(!input) return "";
+      const [y,m,d]=input.split("-");
+      const yy=String(+y%100).padStart(2,"0");
+      return `${+m}/${+d}/${yy}`;
+    }
+    function normalizeCity(s){ return (s||"").toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu,"").trim(); }
+
+    // CSV parser & serializer (semplici ma robusti)
+    function parseCSV(txt){
+      const rows=[]; let i=0,cur=[],f="",q=false,s=txt;
+      while(i<s.length){ const c=s[i];
+        if(q){ if(c=='"'){ if(s[i+1]=='"'){ f+='"'; i+=2; continue; } q=false; i++; continue; } f+=c; i++; continue; }
+        if(c=='"'){ q=true; i++; continue; }
+        if(c==','){ cur.push(f); f=""; i++; continue; }
+        if(c=='\n'){ cur.push(f); rows.push(cur); cur=[]; f=""; i++; continue; }
+        if(c=='\r'){ i++; continue; }
+        f+=c; i++;
+      } cur.push(f); rows.push(cur);
+      const head=rows.shift().map(h=>h.trim());
+      return rows.filter(r=>r.some(x=>x && x.trim()!=="")).map((r,idx)=>{ const o={}; head.forEach((h,ii)=>o[h]=(r[ii]??"").trim()); o.__row=idx; return o; });
+    }
+    function csvEscape(v){
+      if(v==null) v="";
+      let s=String(v);
+      if(/[",\n\r]/.test(s)){ s='"'+s.replace(/"/g,'""')+'"'; }
+      return s;
+    }
+    function toCSV(rows, header){
+      const head = header || Object.keys(rows[0]||{});
+      const out = [ head.join(",") ];
+      for(const r of rows){
+        const arr = head.map(h => csvEscape(r[h] ?? ""));
+        out.push(arr.join(","));
+      }
+      return out.join("\n");
+    }
+
+    // GitHub API helper
+    function gh(url, method="GET", body=null){
+      const t=($("#ghToken").value||"").trim();
+      const headers={"Accept":"application/vnd.github+json"};
+      if(t) headers["Authorization"]="Bearer "+t;
+      if(body) headers["Content-Type"]="application/json";
+      return fetch(url,{method,headers,body});
+    }
+    async function getContentMeta(path){ // per SHA
+      const url=`https://api.github.com/repos/${OWNER}/${REPO}/contents/${encodeURIComponent(path)}?ref=${BRANCH}`;
+      const r=await gh(url);
+      if(!r.ok) throw new Error("Impossibile leggere lo SHA: "+r.status);
+      return r.json();
+    }
+    async function putContent(path, contentBase64, message){
+      const meta=await getContentMeta(path);
+      const body={message, content: contentBase64, branch: BRANCH, sha: meta.sha};
+      const r=await gh(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${encodeURIComponent(path)}`,"PUT",JSON.stringify(body));
+      if(!r.ok) throw new Error("Scrittura fallita "+r.status);
+      return r.json();
+    }
+    async function createOrOverwrite(path, contentBase64, message){
+      // tenta con SHA, se 404 allora create senza sha
+      const t=($("#ghToken").value||"").trim();
+      const headers={"Accept":"application/vnd.github+json","Content-Type":"application/json"};
+      if(t) headers["Authorization"]="Bearer "+t;
+      // prova a leggere sha
+      let sha=null;
+      try{ const meta=await getContentMeta(path); sha=meta.sha; }catch(e){ sha=null; }
+      const body={message, content: contentBase64, branch: BRANCH};
+      if(sha) body.sha=sha;
+      const r=await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${encodeURIComponent(path)}`,{
+        method:"PUT", headers, body:JSON.stringify(body)
+      });
+      if(!r.ok) throw new Error("Upload fallito "+r.status);
+      return r.json();
+    }
+    function fileToBase64(file){
+      return new Promise((res,rej)=>{
+        const fr=new FileReader();
+        fr.onload=()=>{ const b64 = fr.result.split(",")[1] || ""; res(b64); };
+        fr.onerror=()=>rej(new Error("Impossibile leggere file"));
+        fr.readAsDataURL(file);
+      });
+    }
+
+    /* ====== Stato ====== */
+    let EVENTS=[];          // array oggetti evento
+    let EVENTS_HEADER=["evento","tipo","presenza","sicuro","date_from","date_to","orario_inizio","orario_fine","città","luogo","locandina","programma","link_utili","note"];
+    let LUOGHI_FC=null;     // GeoJSON
+    let COMUNI=null;        // comuni.geojson
+    let monthCursor = (()=>{ const n=new Date(); return new Date(Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), 1)); })();
+    let selectedDayKey=null; // "YYYY-MM-DD"
+    let selectedIndex=null;  // indice nel vettore EVENTS (per edit riga esistente)
+
+    // cache nomi
+    function dateKeyUTC(d){ return d.toISOString().slice(0,10); }
+
+    /* ====== UI: Calendar ====== */
+    const IT_DOW=["Lun","Mar","Mer","Gio","Ven","Sab","Dom"];
+    const IT_MONTHS=["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
+
+    function renderCalendar(){
+      $("#monthLabel").textContent=`${IT_MONTHS[monthCursor.getUTCMonth()]} ${monthCursor.getUTCFullYear()}`;
+      const grid=$("#calGrid"); grid.innerHTML="";
+      // intestazione DOW
+      for(const d of IT_DOW){ const el=document.createElement("div"); el.className="dow"; el.textContent=d; grid.appendChild(el); }
+      const first=new Date(Date.UTC(monthCursor.getUTCFullYear(), monthCursor.getUTCMonth(), 1));
+      const js=first.getUTCDay(); // 0=Dom
+      const start = new Date(first); start.setUTCDate( first.getUTCDate() - ((js+6)%7) );
+      // prepara mappa eventi per giorno
+      const byDay=new Map();
+      for(const ev of EVENTS){
+        const from=parseMDY2Y(ev.date_from), to=parseMDY2Y(ev.date_to)||from;
+        if(!from) continue;
+        let d=from; while(d<=to){ const k=dateKeyUTC(d); if(!byDay.has(k)) byDay.set(k,[]); byDay.get(k).push(ev); const nd=new Date(d); nd.setUTCDate(nd.getUTCDate()+1); d=nd; }
+      }
+      for(let i=0;i<42;i++){
+        const day=new Date(start); day.setUTCDate(start.getUTCDate()+i);
+        const inMonth = day.getUTCMonth()===monthCursor.getUTCMonth();
+        const k = dateKeyUTC(day);
+        const cell=document.createElement("div"); cell.className="day"+(inMonth?"":" day--other")+(selectedDayKey===k?" is-selected":"");
+        const n=document.createElement("div"); n.className="n"; n.textContent=day.getUTCDate(); cell.appendChild(n);
+        const list = byDay.get(k)||[];
+        if(list.length){
+          const chip=document.createElement("span"); chip.className="chip"; chip.textContent=list.length+" eventi"; cell.appendChild(chip);
+        }
+        cell.addEventListener("click",()=>{ selectedDayKey=k; renderCalendar(); renderDayList(); prefillDatesFromDay(); });
+        grid.appendChild(cell);
+      }
+    }
+    function renderDayList(){
+      const box=$("#dayList"); box.innerHTML="";
+      if(!selectedDayKey){ box.innerHTML='<div class="muted">Seleziona un giorno</div>'; return; }
+      const eventsToday = EVENTS.filter(ev=>{
+        const f=parseMDY2Y(ev.date_from), t=parseMDY2Y(ev.date_to)||f; if(!f) return false;
+        const d = new Date(selectedDayKey+"T00:00:00Z");
+        return d>=f && d<=t;
+      });
+      if(!eventsToday.length){ box.innerHTML='<div class="muted">Nessun evento in questo giorno</div>'; return; }
+      eventsToday.forEach(ev=>{
+        const card=document.createElement("div"); card.className="item";
+        card.innerHTML=`<div><strong>${ev.evento||"Evento"}</strong></div>
+                        <div class="cap">${ev.tipo||"—"} • ${ev.città||"—"} • ${ev.luogo||"—"}</div>`;
+        card.addEventListener("click",()=>loadEventIntoForm(ev));
+        box.appendChild(card);
+      });
+    }
+    function prefillDatesFromDay(){
+      if(!selectedDayKey) return;
+      $("#f_date_from").value = selectedDayKey;
+      $("#f_date_to").value   = selectedDayKey;
+    }
+
+    /* ====== Load & datalist ====== */
+    async function loadAll(){
+      // contenuti “grezzi” dal sito
+      const [csvTxt, luoghi, comuni] = await Promise.all([
+        fetch(PREFIX+PATH_EVENTI+"?v="+Date.now()).then(r=>r.text()),
+        fetch(PREFIX+PATH_LUOGHI+"?v="+Date.now()).then(r=>r.json()),
+        fetch(PREFIX+PATH_COMUNI +"?v="+Date.now()).then(r=>r.json())
+      ]);
+      EVENTS = parseCSV(csvTxt);
+      LUOGHI_FC = luoghi;
+      COMUNI = comuni;
+
+      // datalist Comuni
+      const dl=$("#dlComuni"); dl.innerHTML="";
+      const names = (COMUNI.features||[]).map(f=>f.properties?.nome_comune).filter(Boolean).sort((a,b)=>a.localeCompare(b,'it'));
+      for(const n of names){ const opt=document.createElement("option"); opt.value=n; dl.appendChild(opt); }
+
+      // datalist Luoghi
+      const dl2=$("#dlLuoghi"); dl2.innerHTML="";
+      const places=(LUOGHI_FC.features||[]).map(f=>f.properties?.nome).filter(Boolean).sort((a,b)=>a.localeCompare(b,'it'));
+      for(const n of places){ const opt=document.createElement("option"); opt.value=n; dl2.appendChild(opt); }
+
+      // calendario
+      renderCalendar();
+      $("#dayList").innerHTML='<div class="muted">Seleziona un giorno</div>';
+      // reset form
+      clearForm();
+    }
+
+    /* ====== Form bind ====== */
+    function clearForm(){
+      selectedIndex=null;
+      $("#f_evento").value="";
+      $("#f_tipo").value="evento";
+      $("#f_presenza").value="";
+      $("#f_sicuro").value="";
+      $("#f_date_from").value="";
+      $("#f_date_to").value="";
+      $("#f_ora_start").value="";
+      $("#f_ora_end").value="";
+      $("#f_citta").value="";
+      $("#f_luogo").value="";
+      $("#f_indirizzo").value="";
+      $("#f_link").value="";
+      $("#f_note").value="";
+      $("#f_lat").value=""; $("#f_lon").value="";
+      $("#f_locandina").value=""; $("#f_programma").value="";
+      $("#f_locandina_name").textContent=""; $("#f_programma_name").textContent="";
+      $("#mapWrap").hidden=true;
+    }
+    function loadEventIntoForm(ev){
+      // trova indice
+      selectedIndex = EVENTS.indexOf(ev);
+
+      $("#f_evento").value=ev.evento||"";
+      $("#f_tipo").value=(ev.tipo||"").toLowerCase()||"evento";
+      $("#f_presenza").value=(ev.presenza||"").toLowerCase();
+      $("#f_sicuro").value=(ev.sicuro||"").toLowerCase();
+      // date
+      const f=parseMDY2Y(ev.date_from); const t=parseMDY2Y(ev.date_to)||f;
+      $("#f_date_from").value=f?toInputDate(f):"";
+      $("#f_date_to").value=t?toInputDate(t):"";
+      // orari
+      $("#f_ora_start").value=ev.orario_inizio||"";
+      $("#f_ora_end").value=ev.orario_fine||"";
+      // città/luogo
+      $("#f_citta").value=ev["città"]||"";
+      $("#f_luogo").value=ev.luogo||"";
+      $("#f_link").value=ev.link_utili||"";
+      $("#f_note").value=ev.note||"";
+      // media (mostra solo i nomi)
+      $("#f_locandina_name").textContent=ev.locandina||"";
+      $("#f_programma_name").textContent=ev.programma||"";
+
+      // prova a precompilare indirizzo/coord dal luoghi.geojson
+      const feat=(LUOGHI_FC.features||[]).find(f=>(f.properties?.nome||"")=== (ev.luogo||""));
+      if(feat){
+        $("#f_indirizzo").value=feat.properties?.indirizzo||"";
+        const [x,y]=feat.geometry?.coordinates||[];
+        $("#f_lon").value = (x!=null?x:"");
+        $("#f_lat").value = (y!=null?y:"");
+      }else{
+        $("#f_indirizzo").value="";
+        $("#f_lon").value=""; $("#f_lat").value="";
+      }
+    }
+    function collectForm(){
+      return {
+        evento: $("#f_evento").value.trim(),
+        tipo: ($("#f_tipo").value||"").trim().toLowerCase(),
+        presenza: ($("#f_presenza").value||"").trim().toLowerCase(),
+        sicuro: ($("#f_sicuro").value||"").trim().toLowerCase(),
+        date_from: fromInputToMDY2($("#f_date_from").value),
+        date_to:   fromInputToMDY2($("#f_date_to").value || $("#f_date_from").value),
+        orario_inizio: $("#f_ora_start").value.trim(),
+        orario_fine:   $("#f_ora_end").value.trim(),
+        "città": $("#f_citta").value.trim(),
+        luogo: $("#f_luogo").value.trim(),
+        locandina: ($("#f_locandina_name").textContent||"").trim(),
+        programma: ($("#f_programma_name").textContent||"").trim(),
+        link_utili: $("#f_link").value.trim(),
+        note: $("#f_note").value
+      };
+    }
+
+    /* ====== Map pick ====== */
+    let map=null, mapMarker=null;
+    $("#btnMapPick").addEventListener("click", ()=>{
+      $("#mapWrap").hidden=false;
+      setTimeout(()=>{
+        if(!map){
+          map=L.map("map",{zoomControl:true, scrollWheelZoom:true});
+          L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19, attribution:"&copy; OpenStreetMap"}).addTo(map);
+          map.on("click",(e)=>{
+            const {lat,lng}=e.latlng;
+            $("#f_lat").value=lat.toFixed(12);
+            $("#f_lon").value=lng.toFixed(12);
+            if(mapMarker){ mapMarker.setLatLng(e.latlng); }
+            else { mapMarker=L.marker(e.latlng).addTo(map); }
+          });
+          map.setView([41.125,16.866],6);
+        }
+        setTimeout(()=>map.invalidateSize(),100);
+        // centra su coordinate se presenti
+        const lat=parseFloat($("#f_lat").value), lon=parseFloat($("#f_lon").value);
+        if(!isNaN(lat)&&!isNaN(lon)){
+          map.setView([lat,lon],15);
+          if(!mapMarker){ mapMarker=L.marker([lat,lon]).addTo(map); }
+          else { mapMarker.setLatLng([lat,lon]); }
+        }
+      },40);
+    });
+
+    /* ====== Media inputs ====== */
+    $("#f_locandina").addEventListener("change", e=>{
+      const f=e.target.files?.[0]; if(!f) return; $("#f_locandina_name").textContent=f.name;
+    });
+    $("#f_programma").addEventListener("change", e=>{
+      const f=e.target.files?.[0]; if(!f) return; $("#f_programma_name").textContent=f.name;
+    });
+
+    /* ====== Save (uploads + csv + geojson) ====== */
+    async function saveAll(){
+      const token=($("#ghToken").value||"").trim();
+      if(!token){ alert("Inserisci il token GitHub (PAT classic con scope repo)"); return; }
+      const ev=collectForm();
+      if(!ev.evento){ alert("Campo 'Evento' obbligatorio"); return; }
+      if(!ev.date_from){ alert("Imposta la data (Dal)"); return; }
+
+      // 1) Upload media se scelti
+      const upTasks=[];
+      const locFile=$("#f_locandina").files?.[0]||null;
+      const prgFile=$("#f_programma").files?.[0]||null;
+      if(locFile){
+        const b64=await fileToBase64(locFile);
+        upTasks.push(createOrOverwrite(PATH_MEDIA+locFile.name, b64, `calendar: upload ${locFile.name}`));
+        ev.locandina=locFile.name;
+      }
+      if(prgFile){
+        const b64=await fileToBase64(prgFile);
+        upTasks.push(createOrOverwrite(PATH_MEDIA+prgFile.name, b64, `calendar: upload ${prgFile.name}`));
+        ev.programma=prgFile.name;
+      }
+      if(upTasks.length){ await Promise.all(upTasks); }
+
+      // 2) Aggiorna array EVENTS (replace o push)
+      if(selectedIndex!=null && selectedIndex>-1){
+        const old = EVENTS[selectedIndex];
+        // preserva ordine colonne
+        EVENTS[selectedIndex] = {...old, ...ev};
+      }else{
+        // push con intestazione coerente
+        const row={}; EVENTS_HEADER.forEach(h=>row[h]=ev[h]??""); EVENTS.push(row);
+      }
+
+      // 3) Serializza CSV e scrivi su GitHub
+      // Ordina le colonne come header originale (EVENTS_HEADER). Rimappa righe.
+      const rows = EVENTS.map(r=>{
+        const o={}; EVENTS_HEADER.forEach(h=>o[h]=r[h]??""); return o;
+      });
+      const csv = toCSV(rows, EVENTS_HEADER);
+      const csvB64 = btoa(unescape(encodeURIComponent(csv)));
+      const commitMsg = ($("#f_commit").value||"").trim() || "calendar: update eventi.csv";
+      await putContent(PATH_EVENTI, csvB64, commitMsg);
+
+      // 4) Aggiorna/crea luogo su GeoJSON se nome presente
+      const luogoName = ($("#f_luogo").value||"").trim();
+      if(luogoName){
+        const lon=parseFloat($("#f_lon").value), lat=parseFloat($("#f_lat").value);
+        if(!isNaN(lat)&&!isNaN(lon)){
+          const addr=($("#f_indirizzo").value||"").trim();
+          const feat = (LUOGHI_FC.features||[]).find(f=>(f.properties?.nome||"")===luogoName);
+          if(feat){
+            feat.properties.indirizzo = addr;
+            feat.geometry = { type:"Point", coordinates:[lon,lat] };
+          }else{
+            LUOGHI_FC.features.push({
+              type:"Feature",
+              properties:{ id:null, indirizzo:addr, nome:luogoName },
+              geometry:{ type:"Point", coordinates:[lon,lat] }
+            });
+          }
+          const geoTxt = JSON.stringify(LUOGHI_FC,null,2);
+          const geoB64 = btoa(unescape(encodeURIComponent(geoTxt)));
+          await putContent(PATH_LUOGHI, geoB64, commitMsg.replace("eventi.csv","luoghi.geojson"));
+        }
+      }
+
+      alert("Salvato 👍");
+      // ricarica dati per sicurezza
+      await loadAll();
+      if(selectedDayKey) renderDayList();
+    }
+
+    /* ====== Delete ====== */
+    async function deleteCurrent(){
+      if(selectedIndex==null){ alert("Nessun evento selezionato."); return; }
+      if(!confirm("Eliminare definitivamente l'evento selezionato da eventi.csv?")) return;
+      const removed = EVENTS.splice(selectedIndex,1);
+      // salva CSV subito
+      const rows = EVENTS.map(r=>{ const o={}; EVENTS_HEADER.forEach(h=>o[h]=r[h]??""); return o; });
+      const csv = toCSV(rows, EVENTS_HEADER);
+      const csvB64 = btoa(unescape(encodeURIComponent(csv)));
+      const commitMsg = ($("#f_commit").value||"").trim() || "calendar: delete row in eventi.csv";
+      await putContent(PATH_EVENTI, csvB64, commitMsg);
+      alert("Riga eliminata.");
+      clearForm(); await loadAll();
+    }
+
+    /* ====== Wiring ====== */
+    $("#openTokenTutorial").addEventListener("click",()=>$("#dlgToken").showModal());
+    $$("[data-close]").forEach(b=>b.addEventListener("click",()=>b.closest("dialog")?.close()));
+    // ricorda token in sessione (scheda)
+    const savedToken=sessionStorage.getItem("gh_pat"); if(savedToken) $("#ghToken").value=savedToken;
+    $("#ghToken").addEventListener("input",e=>sessionStorage.setItem("gh_pat", e.target.value));
+
+    $("#btnLoad").addEventListener("click", loadAll);
+    $("#btnNew").addEventListener("click", ()=>{ clearForm(); if(selectedDayKey){ prefillDatesFromDay(); } });
+    $("#btnSave").addEventListener("click", saveAll);
+    $("#btnSave2").addEventListener("click", saveAll);
+    $("#btnDelete").addEventListener("click", deleteCurrent);
+
+    $("#prevMonth").addEventListener("click",()=>{ monthCursor.setUTCMonth(monthCursor.getUTCMonth()-1); renderCalendar(); renderDayList(); });
+    $("#nextMonth").addEventListener("click",()=>{ monthCursor.setUTCMonth(monthCursor.getUTCMonth()+1); renderCalendar(); renderDayList(); });
+
+    // primo caricamento (senza token va comunque in sola lettura dal sito)
+    loadAll().catch(()=>{ /* l'utente potrà premere Load dopo mettere token */ });
+  </script>
+</body>
+</html>
