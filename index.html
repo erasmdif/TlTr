@@ -238,5 +238,19 @@
   ></script>
   <script src="./app.js"></script>
   <script src="./banner_maker.js"></script>
+  <a class="edit-fab" href="/TlTr/admin/lite-editor.html" title="Modifica avvisi (richiede token)">
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25Zm2.92 2.33H5v-.92L14.06 7.51l.92.92L5.92 19.58ZM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a.9959.9959 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83Z"/></svg>
+</a>
+<style>
+  .edit-fab{
+    position:fixed; right:16px; bottom:16px; width:48px; height:48px;
+    border-radius:50%; background:#ff9800; color:#fff; display:flex;
+    align-items:center; justify-content:center; text-decoration:none;
+    box-shadow:0 6px 16px rgba(0,0,0,.25); z-index:9999;
+  }
+  .edit-fab:hover{ filter:brightness(1.05); transform:translateY(-1px); }
+  .edit-fab svg{ width:24px; height:24px; fill:#fff; }
+  @media print{ .edit-fab{ display:none; } }
+</style>
 </body>
 </html>
