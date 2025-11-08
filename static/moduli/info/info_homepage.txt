@@ -38,3 +38,5 @@ Per ulteriori informazioni scrivere a competenze.trasversali@uniba.it
 convegno a Roma. Se si parte da Firenze, si deve allegare screen in cui si mostra che il biglietto Firenze–Roma è meno costoso rispetto al biglietto Bari–Roma, altrimenti non sarà accettato il rimborso.
 
 2) Non è chiaro se la compilazione del modulo **S** "annulli" questa dinamica
+
+prova commit
