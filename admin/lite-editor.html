@@ -2,459 +2,300 @@
 <html lang="it">
 <head>
   <meta charset="utf-8" />
-  <title>Lite Editor — Avvisi Homepage</title>
+  <title>Editor Avvisi – Lite</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
-  <meta http-equiv="Pragma" content="no-cache" />
-  <meta http-equiv="Expires" content="0" />
   <style>
-    :root{
-      --brand:#ff9800;
-      --ink:#222;
-      --bg:#f7f7f9;
-      --muted:#6a6a6a;
-      --ok:#2e7d32;
-      --danger:#c62828;
-      --btn:#1976d2;
-    }
-    html,body{height:100%}
-    body{
-      margin:0; background:var(--bg);
-      font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial,sans-serif;
-      color:var(--ink);
-    }
-    .topbar{
-      position:sticky; top:0; z-index:10; background:#fff; border-bottom:1px solid #e6e6e9;
-      padding:10px 14px; display:flex; gap:12px; align-items:center; flex-wrap:wrap;
-    }
-    .topbar .brand{font-weight:700}
-    .topbar .muted{color:var(--muted); font-size:.92em}
-    .contain{max-width:980px; margin:18px auto; padding:0 14px;}
-    .row{display:flex; gap:14px; align-items:center; flex-wrap:wrap}
-
-    input[type="password"], input[type="text"], input[type="search"]{
-      padding:8px 10px; border:1px solid #dadde3; border-radius:8px; min-width:260px;
-      font:inherit; background:#fff;
-    }
-    textarea{
-      width:100%; min-height:420px; resize:vertical; border:1px solid #dadde3; border-radius:10px;
-      padding:14px; background:#fff; font:14px/1.5 ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
-    }
-    button{
-      appearance:none; padding:8px 12px; border-radius:10px; border:1px solid transparent; cursor:pointer;
-      background:var(--btn); color:#fff; font-weight:600;
-    }
-    button.secondary{ background:#fff; color:var(--btn); border-color:var(--btn); }
-    button.warn{ background:var(--brand); }
-    button.ghost{ background:#fff; color:#333; border-color:#ddd; }
-    button:disabled{ opacity:.6; pointer-events:none; }
-    .toolbar{ display:flex; flex-wrap:wrap; gap:8px; margin:10px 0 6px; }
-    .toolbar button{ background:#fff; color:#333; border:1px solid #ddd; }
-    .toolbar .sep{ width:10px; }
-
-    .switch{
-      display:inline-flex; align-items:center; gap:8px; user-select:none;
-      background:#fff; border:1px solid #e6e6e9; padding:6px 10px; border-radius:999px;
-    }
-    .switch input{ display:none; }
-    .switch .dot{
-      width:18px; height:18px; border-radius:50%; background:#ccc; position:relative;
-    }
-    .switch input:checked + .dot{ background:var(--brand); }
-    .switch .lbl{ font-size:.92em; color:#444; }
-
-    .status{ font-size:.92em; margin-left:auto; }
-    .status .ok{ color:var(--ok); font-weight:600; }
-    .status .bad{ color:var(--danger); font-weight:600; }
-
-    /* PREVIEW area, replica stile “warn-list” della homepage */
-    #previewWrap{ display:none; }
-    .warn-box{ background:#fff; border:1px solid #ffe2bf; border-radius:12px; padding:12px 12px 4px; }
-    .warn-title{ font-weight:700; color:#c56a00; margin:0 0 8px; display:flex; align-items:center; gap:8px; }
-    .warn-title .ico{ font-size:20px }
-    .warn-list{ list-style:none; padding:0; margin:0; }
-    .warn-list>li{ padding:10px 10px; border-top:1px dashed #f3c58a; }
-    .warn-list>li:first-child{ border-top:none; }
-    .li-collapsible summary{
-      background:#fff3e0; color:#8a4b00; border:1px solid #ffd9b0;
-      padding:8px 10px; border-radius:8px; cursor:pointer; list-style:none;
-    }
-    .li-content{ padding:8px 2px 2px 14px; }
-    .warn-mark{ background:#ffe0b2; padding:0 .2em; border-radius:.2em; }
-    .ghost-link{ position:relative; text-decoration:none; color:inherit; border-bottom:1px dotted #bbb; }
-    .ghost-link::after{ content:"↗"; font-size:.8em; color:#999; margin-left:.25em; }
-
-    .help-banner{
-      background:#fff; border-bottom:1px solid #e9e9ee; padding:10px 14px; display:flex; align-items:center; gap:10px;
-    }
-    .help-banner a{ color:var(--btn); font-weight:700; text-decoration:none; }
-    details.help details{ margin:8px 0; }
-    details.help summary{
-      cursor:pointer; padding:8px 10px; background:#f6f8ff; border:1px solid #dbe2ff; border-radius:8px; font-weight:600;
-    }
-    .help blockquote{ margin:8px 0; color:#555; }
-    .help img{ max-width:100%; border:1px solid #eee; border-radius:8px; }
-    .end-actions{ display:flex; gap:10px; align-items:center; justify-content:flex-end; margin-top:10px; }
-    .muted{ color:#777; }
+    :root{--brand:#ff7f00;}
+    body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;margin:0;background:#f6f7fb;color:#222}
+    header{padding:10px 12px;background:#fff;border-bottom:1px solid #e3e6ef;display:flex;gap:12px;align-items:center;position:sticky;top:0;z-index:2}
+    header .title{font-weight:700}
+    header .grow{flex:1}
+    .btn{border:1px solid #d4d8e3;background:#fff;border-radius:8px;padding:8px 10px;cursor:pointer}
+    .btn.primary{background:var(--brand);color:#fff;border-color:var(--brand)}
+    .btn.ghost{background:transparent}
+    .row{display:grid;grid-template-columns:1fr;gap:14px;padding:14px;max-width:1024px;margin:0 auto}
+    .toolbar{display:flex;flex-wrap:wrap;gap:8px}
+    textarea#editor{width:100%;min-height:60vh;resize:vertical;padding:10px;border-radius:10px;border:1px solid #d4d8e3;font:14px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
+    #preview{display:none;background:#fff;border:1px solid #e3e6ef;border-radius:10px;padding:16px;min-height:60vh}
+    .warn-mark{background:#ffe0b2;padding:0 .2em;border-radius:.2em}
+    .helpbar{background:#fff6ea;border-bottom:1px solid #ffd9a6;color:#533100;padding:8px 12px}
+    .helpbar a{font-weight:700;color:#c14a00;text-decoration:underline;cursor:pointer}
+    dialog{border:none;border-radius:12px;max-width:820px;width:min(92vw,820px);padding:0;box-shadow:0 8px 40px rgba(0,0,0,.25)}
+    dialog .dlg-head{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid #eee}
+    dialog .dlg-body{padding:16px;max-height:70vh;overflow:auto}
+    .step{margin:0 0 14px;padding:12px;border:1px dashed #ddd;border-radius:8px;background:#fafbff}
+    .step img{max-width:100%;height:auto;border:1px solid #eee;border-radius:8px;margin-top:8px}
+    .tok{font:600 12px ui-monospace,monospace;background:#111;color:#0f0;padding:2px 6px;border-radius:6px}
+    .right{margin-left:auto}
+    .muted{opacity:.7}
   </style>
 </head>
 <body>
 
   <!-- Banner guida -->
-  <div class="help-banner">
-    <span>🛠️</span>
-    <div><strong>Clicca <a href="#" id="openGuide">QUI</a></strong> se non hai ancora fatto la procedura per poter modificare gli avvisi.</div>
-  </div>
-  <div class="contain help" id="guide" hidden>
-    <details open>
-      <summary>Che cosa serve</summary>
-      <ul>
-        <li>Un account GitHub.</li>
-        <li>Essere stati aggiunti come collaboratori al repo <code>erasmdif/TlTr</code> <em>(oppure usare un token “classic” con permesso repo)</em>.</li>
-        <li>Un token personale (PAT) da incollare qui sotto per autorizzare le modifiche.</li>
-      </ul>
-    </details>
-    <details>
-      <summary>a) Crea un account GitHub</summary>
-      <p>Vai su <a href="https://github.com/signup" target="_blank" rel="noopener">github.com/signup</a> e completa la registrazione.</p>
-      <blockquote class="muted">Se hai già un account, salta questo passaggio.</blockquote>
-    </details>
-    <details>
-      <summary>b) Mandami il tuo username per l’invito</summary>
-      <p>Scrivimi su WhatsApp o via mail a <a href="mailto:erasmo.difonso@libero.it">erasmo.difonso@libero.it</a> col tuo username GitHub. Riceverai un invito come collaboratore al repo.</p>
-    </details>
-    <details>
-      <summary>c) Apri la sezione per creare i token</summary>
-      <p>Dal tuo profilo GitHub: <em>Settings → Developer settings → Personal access tokens → Tokens (classic) → Generate new token (classic)</em>.</p>
-      <img src="/TlTr/static/images/tutorial_editor/token_section.png" alt="Dove si crea il token" loading="lazy">
-    </details>
-    <details>
-      <summary>d) Crea il token (PAT “classic”)</summary>
-      <ol>
-        <li>Dai un nome (es. <em>TlTr editor</em>) e una scadenza.</li>
-        <li>Spunta lo scope <code>repo</code> (permette lettura/scrittura sul repo invitato).</li>
-        <li>Genera e copia il token: si vede solo una volta.</li>
-      </ol>
-      <img src="/TlTr/static/images/tutorial_editor/token_creation.png" alt="Creazione token" loading="lazy">
-      <p class="muted">Nota: se in futuro sposteremo il repo sotto un’<strong>organizzazione</strong> potrai usare anche i token <em>fine-grained</em> selezionando l’org e il repo.</p>
-    </details>
-    <details>
-      <summary>e) Usa il token nell’editor</summary>
-      <p>Qui sotto incolla il token, premi <strong>Load</strong> per caricare il testo, poi <strong>Save</strong> per salvare. Il token rimane solo nella scheda del browser (sessionStorage).</p>
-      <img src="/TlTr/static/images/tutorial_editor/token_usage.png" alt="Uso del token nell'editor" loading="lazy">
-    </details>
-    <hr>
+  <div class="helpbar">
+    Clicca <a id="openTokenTutorial">QUI</a> se non hai ancora fatto la procedura per poter modificare gli avvisi. <br/>
+    Clicca <a id="openEditorTutorial">QUI</a> per vedere le linee guida su come editare.
   </div>
 
-  <div class="topbar">
-    <div class="brand">Lite Editor</div>
-    <div class="muted">Avvisi homepage → <code>static/moduli/info/info_homepage.txt</code></div>
+  <header>
+    <span class="title">Editor Avvisi – info_homepage.txt</span>
+    <span class="grow"></span>
+    <label class="muted">GitHub token:</label>
+    <input id="ghToken" type="password" placeholder="incolla PAT" style="width:260px;padding:8px;border:1px solid #d4d8e3;border-radius:8px">
+    <button id="btnLoad" class="btn">Load</button>
+    <button id="btnSave" class="btn primary">Save</button>
+    <button id="btnToggle" class="btn ghost" title="Switch editor/anteprima">Preview</button>
+  </header>
 
-    <label class="switch" title="Preview fedele al sito">
-      <input type="checkbox" id="togglePreview">
-      <span class="dot"></span>
-      <span class="lbl">Preview</span>
-    </label>
-
-    <div class="status" id="status">Token: <span class="bad">non inserito</span></div>
-  </div>
-
-  <div class="contain">
-    <div class="row" style="gap:10px; align-items:flex-end;">
-      <div>
-        <label for="token" class="muted" style="display:block; font-size:.9em;">GitHub Token</label>
-        <input id="token" type="password" placeholder="Incolla qui il tuo PAT" autocomplete="off">
-      </div>
-      <div>
-        <button id="btnLoad" class="secondary">Load</button>
-        <button id="btnClear" class="ghost" title="Dimentica token in questa scheda">Reset token</button>
-      </div>
-      <div style="margin-left:auto">
-        <input id="commitMsg" type="text" placeholder="Messaggio commit (es. aggiorna avvisi)" style="min-width:280px">
-        <button id="btnSave" class="warn">Save</button>
-      </div>
+  <div class="row">
+    <!-- mini-toolbar (markup) -->
+    <div class="toolbar" id="miniTb">
+      <button data-cmd="bold" class="btn">Grassetto</button>
+      <button data-cmd="italic" class="btn">Corsivo</button>
+      <button data-cmd="ul" class="btn">• Elenco</button>
+      <button data-cmd="ol" class="btn">1. Elenco</button>
+      <button data-cmd="link" class="btn">Link</button>
+      <button data-cmd="mark" class="btn">!! Evidenzia !!</button>
+      <button data-cmd="moda" class="btn">[[modA|…]]</button>
+      <button data-cmd="ghost" class="btn">((link invisibile))</button>
+      <span class="muted">— switch “Preview” per vedere come apparirà sul sito</span>
     </div>
 
-    <!-- Toolbar -->
-    <div class="toolbar" id="toolbar">
-      <button data-cmd="bold"><strong>B</strong></button>
-      <button data-cmd="italic"><em>I</em></button>
-      <span class="sep"></span>
-      <button data-cmd="link">Link</button>
-      <button data-cmd="ul">• Lista</button>
-      <button data-cmd="ol">1. Lista</button>
-      <span class="sep"></span>
-      <button data-cmd="mark">!! evidenzia !!</button>
-      <button data-cmd="moda">[[modA|…]]</button>
-      <button data-cmd="ghost">((link invisibile))</button>
-    </div>
-
-    <!-- Editor -->
-    <textarea id="editor" spellcheck="false" placeholder="- i poster presentati in data **07/11** ..."></textarea>
-
-    <!-- Preview (identica al sito) -->
-    <div id="previewWrap">
-      <div class="warn-box">
-        <div class="warn-title"><span class="ico">⚠️</span> Avvisi Homepage (preview)</div>
-        <div id="preview"></div>
-      </div>
-      <div class="end-actions">
-        <span class="muted">La preview usa lo stesso parser della homepage.</span>
-      </div>
-    </div>
+    <textarea id="editor" spellcheck="false" placeholder="Caricamento in corso…"></textarea>
+    <div id="preview"></div>
   </div>
 
-<script>
-/* ====== CONFIG ====== */
-const OWNER  = "erasmdif";
-const REPO   = "TlTr";
-const BRANCH = "main";
-const FILE_PATH = "static/moduli/info/info_homepage.txt";
+  <!-- Tutorial Token -->
+  <dialog id="dlgToken">
+    <div class="dlg-head">
+      <strong>Procedura abilitazione (una tantum)</strong>
+      <button class="btn" data-close>Chiudi</button>
+    </div>
+    <div class="dlg-body">
+      <div class="step">
+        <strong>1) Crea un account GitHub</strong> (se non ce l’hai): <a href="https://github.com/signup" target="_blank" rel="noopener">github.com/signup</a>.
+      </div>
+      <div class="step">
+        <strong>2) Invia il tuo username</strong> a <a href="mailto:erasmo.difonso@libero.it">erasmo.difonso@libero.it</a> o su WhatsApp, e attendi l’invito al repo <em>TlTr</em>.
+      </div>
+      <div class="step">
+        <strong>3) Apri la sezione dei token</strong> &nbsp;<span class="tok">Settings → Developer settings → Personal access tokens → Fine-grained tokens</span><br>
+        <img src="/TlTr/static/images/tutorial_editor/token_section.png" alt="Sezione token" loading="lazy">
+      </div>
+      <div class="step">
+        <strong>4) Crea un token fine-grained</strong> con permessi <em>Repository access</em> → “Only select repositories” → <b>TlTr</b>; <em>Permissions</em> → <b>Contents: Read and write</b>; scegli scadenza.<br>
+        <img src="/TlTr/static/images/tutorial_editor/token_creation.png" alt="Creazione token" loading="lazy">
+      </div>
+      <div class="step">
+        <strong>5) Copia il token</strong> (si vede una sola volta) e incollalo nel campo “GitHub token” di questa pagina, poi premi <b>Load</b>.<br>
+        <img src="/TlTr/static/images/tutorial_editor/token_usage.png" alt="Uso token" loading="lazy">
+      </div>
+    </div>
+  </dialog>
 
-/* ====== UI HOOKS ====== */
-const $ = (s, r=document)=>r.querySelector(s);
-const tokenInput = $("#token");
-const btnLoad = $("#btnLoad");
-const btnClear= $("#btnClear");
-const btnSave = $("#btnSave");
-const editor  = $("#editor");
-const commitMsg = $("#commitMsg");
-const statusEl = $("#status");
-const togglePreview = $("#togglePreview");
-const toolbar = $("#toolbar");
-const guideBtn = $("#openGuide");
-const guide = $("#guide");
-const previewWrap = $("#previewWrap");
-const previewEl = $("#preview");
+  <!-- Tutorial uso editor -->
+  <dialog id="dlgEditor">
+    <div class="dlg-head">
+      <strong>Linee guida di editing</strong>
+      <button class="btn" data-close>Chiudi</button>
+    </div>
+    <div class="dlg-body">
+      <div class="step">
+        <strong>A) Carica il testo</strong> → incolla il token e premi <b>Load</b>. Il contenuto di <code>static/moduli/info/info_homepage.txt</code> viene caricato nell’editor.
+      </div>
+      <div class="step">
+        <strong>B) Modifica con la toolbar</strong><br>
+        • <em>Grassetto</em>: seleziona testo → <b>Grassetto</b> (inserisce <code>**…**</code>)<br>
+        • <em>Evidenza</em>: seleziona testo → <b>!! Evidenzia !!</b> (inserisce <code>!!…!!</code>)<br>
+        • <em>Elenco puntato</em>: <b>• Elenco</b> (inserisce “- ” all’inizio riga)<br>
+        • <em>Link</em>: seleziona testo → <b>Link</b> → inserisci URL<br>
+        • <em>Link invisibile</em>: <b>((link invisibile))</b> → incolla URL (restituito come <code>((https://…))</code>)<br>
+        • <em>[[modA|…]]</em>: inserisce il richiamo al Modulo A.
+      </div>
+      <div class="step">
+        <strong>C) Preview</strong> → premi <b>Preview</b> per vedere il risultato esatto che appare sul sito. Premi di nuovo per tornare in editing.
+      </div>
+      <div class="step">
+        <strong>D) Salva</strong> → <b>Save</b>, opzionalmente inserisci un messaggio di commit; le modifiche finiscono su <code>main</code>.
+      </div>
+    </div>
+  </dialog>
 
-/* ====== HELP BANNER ====== */
-guideBtn.addEventListener("click", (e)=>{ e.preventDefault(); guide.hidden = !guide.hidden; window.scrollTo({top:0,behavior:"smooth"}); });
+  <script>
+    // ==== util =====
+    const owner = "erasmdif", repo = "TlTr", branch = "main";
+    const path  = "static/moduli/info/info_homepage.txt";
 
-/* ====== TOKEN PERSISTENZA (solo in questa scheda) ====== */
-const keyToken = "tltr_editor_token";
-const getToken = ()=> tokenInput.value.trim() || sessionStorage.getItem(keyToken) || "";
-const setToken = (t)=>{ tokenInput.value=t; if(t) sessionStorage.setItem(keyToken,t); updateStatus(); };
-const clearToken = ()=>{ tokenInput.value=""; sessionStorage.removeItem(keyToken); updateStatus(); };
+    const $ = (s,r=document)=>r.querySelector(s);
+    const $$ = (s,r=document)=>Array.from(r.querySelectorAll(s));
 
-function updateStatus(){
-  const t = getToken();
-  statusEl.innerHTML = "Token: " + (t? '<span class="ok">inserito</span>' : '<span class="bad">non inserito</span>');
-}
-setToken(sessionStorage.getItem(keyToken) || "");
+    // forza decodifica UTF-8 (evita moji-bake tipo "attivitÃ")
+    async function loadUTF8(url){
+      const r = await fetch(url, {cache:"no-store"});
+      const buf = await r.arrayBuffer();
+      return new TextDecoder("utf-8").decode(buf);
+    }
 
-/* ====== GITHUB API MINIMAL ====== */
-async function gh(method, path, body){
-  const res = await fetch(`https://api.github.com${path}`, {
-    method,
-    headers:{
-      "Accept":"application/vnd.github+json",
-      "Authorization":"Bearer "+getToken()
-    },
-    body: body ? JSON.stringify(body) : undefined
-  });
-  if(!res.ok) throw new Error(`${method} ${path} → ${res.status}`);
-  return res.json();
-}
-async function loadFile(){
-  const json = await gh("GET", `/repos/${OWNER}/${REPO}/contents/${encodeURIComponent(FILE_PATH)}?ref=${BRANCH}`);
-  const content = atob(json.content.replace(/\n/g,""));
-  editor.value = content;
-  editor.dispatchEvent(new Event("input")); // aggiorna preview se attiva
-  editor.focus();
-  return { sha: json.sha };
-}
-async function saveFile(sha){
-  const message = (commitMsg.value.trim() || "cms: update info_homepage");
-  const content = btoa(unicodeToBinary(editor.value));
-  const body = { message, content, branch: BRANCH, sha };
-  const json = await gh("PUT", `/repos/${OWNER}/${REPO}/contents/${encodeURIComponent(FILE_PATH)}`, body);
-  return json.content?.sha || sha;
-}
-/* base64 Unicode-safe */
-function unicodeToBinary(str){ // preserva utf-8
-  const bytes = new TextEncoder().encode(str);
-  let binary = "";
-  bytes.forEach(b=>binary += String.fromCharCode(b));
-  return binary;
-}
-
-/* ====== TOOLBAR (markup veloce) ====== */
-function surround(selStart, selEnd, before, after, placeholder=""){
-  const v = editor.value, sel = v.slice(selStart, selEnd) || placeholder;
-  const out = v.slice(0, selStart) + before + sel + after + v.slice(selEnd);
-  editor.value = out;
-  const pos = selStart + before.length + sel.length;
-  editor.setSelectionRange(pos, pos);
-  editor.dispatchEvent(new Event("input"));
-  editor.focus();
-}
-function insertLinePrefix(selStart, selEnd, prefix){
-  const v = editor.value;
-  const start = v.lastIndexOf("\n", selStart-1) + 1;
-  const end   = v.indexOf("\n", selEnd); const stop = end===-1? v.length : end;
-  const block = v.slice(start, stop).split("\n").map(l=> l? (prefix + (prefix==='- ' && !l.startsWith('- ')? l : l.replace(/^\-?\s*/,''))) : l).join("\n");
-  editor.value = v.slice(0, start) + block + v.slice(stop);
-  const pos = start + block.length;
-  editor.setSelectionRange(pos, pos);
-  editor.dispatchEvent(new Event("input"));
-  editor.focus();
-}
-toolbar.addEventListener("click", e=>{
-  const b = e.target.closest("button[data-cmd]"); if(!b) return;
-  e.preventDefault();
-  const cmd = b.dataset.cmd;
-  const s = editor.selectionStart, epos = editor.selectionEnd;
-  if(cmd==="bold") return surround(s, epos, "**","**","grassetto");
-  if(cmd==="italic") return surround(s, epos, "*","*","corsivo");
-  if(cmd==="link"){
-    const url = prompt("URL (https://…):","https://"); if(!url) return;
-    return surround(s, epos, "[",`](${url})`,"testo del link");
-  }
-  if(cmd==="ul") return insertLinePrefix(s, epos, "- ");
-  if(cmd==="ol") return insertLinePrefix(s, epos, "1) ");
-  if(cmd==="mark") return surround(s, epos, "!!","!!","testo evidenziato");
-  if(cmd==="moda") return surround(s, epos, "[[modA|","]]", "vedi Info Modulo A");
-  if(cmd==="ghost"){
-    const url = prompt("URL invisibile (https://…):","https://"); if(!url) return;
-    return surround(s, epos, "((", "))", "");
-  }
-});
-
-/* ====== PREVIEW: stesso parser della homepage ====== */
-function formatInfoText(raw){
-  if(!raw) return "";
-  let s = raw.replace(/\r\n/g,"\n").replace(/_{3,}/g,"");
-  const lines = s.split("\n");
-  const out=[]; let openUL=false, openOL=false;
-  const close=()=>{ if(openUL){out.push("</ul>");openUL=false;} if(openOL){out.push("</ol>");openOL=false;} };
-  for(const L of lines){
-    const t=L.trim(); if(!t){ close(); continue; }
-    if(/^([•\-]|o\s)/i.test(t)){ if(!openUL){close();out.push("<ul>");openUL=true;} out.push("<li>"+t.replace(/^([•\-]|o\s+)/i,"")+"</li>"); continue; }
-    if(/^\d+[\.\)]\s+/.test(t)){ if(!openOL){close();out.push("<ol>");openOL=true;} out.push("<li>"+t.replace(/^\d+[\.\)]\s+/,"")+"</li>"); continue; }
-    close(); out.push("<p>"+t+"</p>");
-  }
-  close(); return out.join("");
-}
-function enhanceInline(raw){
-  if(!raw) return "";
-  let s = raw;
-  s = s.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
-  s = s.replace(/!!(.+?)!!/g, '<span class="warn-mark">$1</span>');
-  s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
-  s = s.replace(/(^|[\s(])([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})(?=[\s),]|$)/g, '$1<a href="mailto:$2">$2</a>');
-  s = s.replace(/\[\[modA(?:\|([^\]]+))?\]\]/gi, (_,label)=>`<a href="#" data-open="modA_general">${label||"vedi Info Modulo A"}</a>`);
-  // link invisibile ((...))
-  s = s.replace(/\(\((https?:\/\/[^\s)]+)\)\)/g, (_m, url)=>`<a class="ghost-link" href="${url}" target="_blank" rel="noopener" aria-label="Apri link"></a>`);
-  return s;
-}
-function buildCollapsibleWarnList(raw){
-  const lines = (raw||"").replace(/\r\n/g,"\n").split("\n");
-  const groups = [];
-  let cur = null;
-  const push = ()=>{ if(cur){ groups.push(cur); cur=null; } };
-  const startNew = (text)=>{ cur = { summary: text, body: [], seenBlank:false, bodyHadNonDash:false }; };
-
-  for (let i=0;i<lines.length;i++){
-    const Lraw = lines[i];
-    const L = Lraw.trim();
-
-    if (/^-\s+/.test(L)) {
-      const text = L.replace(/^-+\s+/, '').trim();
-      if (!cur) { startNew(text); continue; }
-      if (cur.seenBlank) {
-        const summaryEndsWithColon = /[:：]\s*$/.test(cur.summary);
-        if (summaryEndsWithColon && !cur.bodyHadNonDash) {
-          cur.body.push(Lraw);
-        } else {
-          push(); startNew(text);
-        }
-      } else {
-        push(); startNew(text);
+    // --- markup interprete (stesso del sito) ---
+    function formatInfoText(raw){
+      if(!raw) return "";
+      let s = raw.replace(/\r\n/g,"\n").replace(/_{3,}/g,"");
+      const lines = s.split("\n");
+      const out=[]; let openUL=false, openOL=false;
+      const close=()=>{ if(openUL){out.push("</ul>");openUL=false;} if(openOL){out.push("</ol>");openOL=false;} };
+      for(const L of lines){
+        const t=L.trim(); if(!t){ close(); continue; }
+        if(/^([•\-]|o\s)/i.test(t)){ if(!openUL){close();out.push("<ul>");openUL=true;} out.push("<li>"+t.replace(/^([•\-]|o\s+)/i,"")+"</li>"); continue; }
+        if(/^\d+[\.\)]\s+/.test(t)){ if(!openOL){close();out.push("<ol>");openOL=true;} out.push("<li>"+t.replace(/^\d+[\.\)]\s+/,"")+"</li>"); continue; }
+        close(); out.push("<p>"+t+"</p>");
       }
-      continue;
+      close(); return out.join("");
     }
-    if (L === "") { if (cur) cur.seenBlank = true; continue; }
-    if (cur) {
-      if (!cur.seenBlank) { cur.summary += " " + L; }
-      else { cur.body.push(Lraw); if (!/^\s*-\s+/.test(L)) cur.bodyHadNonDash = true; }
-    } else { startNew(L); }
-  }
-  push();
-
-  const ul = document.createElement("ul");
-  ul.className = "warn-list";
-  for (const g of groups) {
-    const li = document.createElement("li");
-    const hasBody = g.body.join("\n").trim().length > 0;
-    if (hasBody) {
-      li.className = "li-collapsible";
-      const det = document.createElement("details"); // chiuso di default
-      const sum = document.createElement("summary");
-      sum.innerHTML = enhanceInline(g.summary);
-      const wrap = document.createElement("div");
-      wrap.className = "li-content";
-      wrap.innerHTML = formatInfoText(enhanceInline(g.body.join("\n")));
-      det.append(sum, wrap);
-      li.appendChild(det);
-    } else {
-      li.innerHTML = enhanceInline(g.summary);
+    function enhanceInline(raw){
+      if(!raw) return "";
+      let s = raw;
+      s = s.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+      s = s.replace(/!!(.+?)!!/g, '<span class="warn-mark">$1</span>');
+      s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+      s = s.replace(/(^|[\s(])([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})(?=[\s),]|$)/g,'$1<a href="mailto:$2">$2</a>');
+      s = s.replace(/\[\[modA(?:\|([^\]]+))?\]\]/gi,(_,label)=>`<a href="#" data-open="modA_general">${label||"vedi Info Modulo A"}</a>`);
+      // link invisibile → ancora senza testo visibile
+      s = s.replace(/\(\((https?:\/\/[^\s)]+)\)\)/g, '<a class="ghost-link" href="$1" target="_blank" rel="noopener" aria-label="Apri link"></a>');
+      return s;
     }
-    ul.appendChild(li);
-  }
-  return ul;
-}
-function refreshPreview(){
-  previewEl.innerHTML = "";
-  const ul = buildCollapsibleWarnList(editor.value);
-  previewEl.appendChild(ul);
-  // disattiva azioni speciali nella preview
-  previewEl.querySelectorAll('[data-open="modA_general"]').forEach(a=>a.addEventListener("click",e=>e.preventDefault()));
-}
 
-/* toggle preview */
-togglePreview.addEventListener("change", ()=>{
-  const on = togglePreview.checked;
-  $("#editor").style.display = on ? "none" : "block";
-  $("#toolbar").style.display = on ? "none" : "flex";
-  previewWrap.style.display = on ? "block" : "none";
-  if(on) refreshPreview();
-});
-editor.addEventListener("input", ()=>{
-  if(togglePreview.checked) refreshPreview();
-});
+    function renderPreview(txt){
+      $("#preview").innerHTML = formatInfoText( enhanceInline(txt) );
+      // eventuali ancore speciali non fanno nulla qui
+      $("#preview").querySelectorAll('[data-open="modA_general"]').forEach(a=>{
+        a.addEventListener("click",e=>{e.preventDefault();alert("Nel sito apre le info del Modulo A.");});
+      });
+    }
 
-/* ====== LOAD / SAVE ====== */
-let currentSha = null;
+    // ==== GitHub API (contenuti) ====
+    function gh(url){
+      const t = $("#ghToken").value.trim();
+      const h = {'Accept': 'application/vnd.github+json'};
+      if(t) h['Authorization'] = 'Bearer '+t;
+      return fetch(url,{headers:h});
+    }
+    async function loadFile(){
+      // scarica blob della branch (per avere il file + sha)
+      const url = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}?ref=${branch}`;
+      const r = await gh(url);
+      if(!r.ok){ throw new Error("GitHub API error "+r.status); }
+      const j = await r.json();
+      const txt = atob(j.content.replace(/\s/g,""));
+      $("#editor").value = txt;
+      renderPreview(txt);
+      return { sha:j.sha, text:txt };
+    }
+    async function saveFile(commitMsg){
+      const content = btoa(unescape(encodeURIComponent($("#editor").value)));
+      // leggi sha corrente prima di scrivere
+      const head = await gh(`https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}?ref=${branch}`).then(r=>r.json());
+      const body = {
+        message: commitMsg || "cms: update info_homepage",
+        content, branch,
+        sha: head.sha
+      };
+      const r = await gh(`https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}`, {
+        method:"PUT",
+        headers:{'Content-Type':'application/json','Accept':'application/vnd.github+json','Authorization':'Bearer '+$("#ghToken").value.trim()},
+        body: JSON.stringify(body)
+      });
+      if(!r.ok){ throw new Error("Save failed "+r.status); }
+      return r.json();
+    }
 
-btnLoad.addEventListener("click", async ()=>{
-  try{
-    setToken(getToken()); // salva
-    currentSha = (await loadFile()).sha;
-    alert("Testo caricato ✅");
-  }catch(err){
-    console.error(err);
-    alert("Errore nel caricamento. Controlla token e permessi.");
-  }
-});
-btnSave.addEventListener("click", async ()=>{
-  if(!currentSha){ alert("Devi prima caricare il file (Load)."); return; }
-  try{
-    const sha = await saveFile(currentSha);
-    currentSha = sha;
-    alert("Salvato su main ✅");
-  }catch(err){
-    console.error(err);
-    alert("Errore nel salvataggio. Controlla token/permessi.");
-  }
-});
-btnClear.addEventListener("click", ()=>{ clearToken(); });
+    // ==== UI =====
+    // banner tutorial
+    $("#openTokenTutorial").addEventListener("click",()=>$("#dlgToken").showModal());
+    $("#openEditorTutorial").addEventListener("click",()=>$("#dlgEditor").showModal());
+    $$("[data-close]").forEach(b=>b.addEventListener("click",()=>b.closest("dialog")?.close()));
 
-/* auto-load se il token è già presente */
-window.addEventListener("DOMContentLoaded", async ()=>{
-  if(getToken()){
-    try{ currentSha = (await loadFile()).sha; }catch{}
-  }
-});
-</script>
+    // ricorda token in session (solo tab corrente)
+    const savedToken = sessionStorage.getItem("gh_pat");
+    if(savedToken) $("#ghToken").value = savedToken;
+    $("#ghToken").addEventListener("input", e => sessionStorage.setItem("gh_pat", e.target.value));
+
+    // carica contenuto
+    $("#btnLoad").addEventListener("click", async ()=>{
+      try{
+        $("#btnLoad").disabled = true;
+        // forziamo anche il download “grezzo” dal sito per verificare UTF-8
+        // (solo per il primo paint dell’editor)
+        const raw = await loadUTF8("/TlTr/"+path);
+        $("#editor").value = raw;
+        renderPreview(raw);
+        // ma per salvare serve anche lo SHA -> leggilo ora
+        await loadFile();
+      }catch(e){ alert("Errore nel caricamento: "+e.message); }
+      finally{ $("#btnLoad").disabled = false; }
+    });
+
+    // salva
+    $("#btnSave").addEventListener("click", async ()=>{
+      const msg = prompt("Messaggio commit:", "cms: update info_homepage");
+      if(msg===null) return;
+      try{
+        $("#btnSave").disabled = true;
+        await saveFile(msg);
+        alert("Salvato 👍");
+      }catch(e){ alert("Errore salvataggio: "+e.message); }
+      finally{ $("#btnSave").disabled = false; }
+    });
+
+    // toolbar base
+    function wrapSel(before, after){
+      const ta = $("#editor");
+      const [s,e] = [ta.selectionStart, ta.selectionEnd];
+      const v = ta.value;
+      const sel = v.slice(s,e);
+      ta.value = v.slice(0,s) + before + sel + (after ?? before) + v.slice(e);
+      ta.focus();
+      ta.selectionStart = s + before.length;
+      ta.selectionEnd   = e + before.length;
+      if($("#preview").style.display!=="none") renderPreview(ta.value);
+    }
+    $("#miniTb").addEventListener("click", e=>{
+      const b = e.target.closest("button[data-cmd]"); if(!b) return;
+      const cmd = b.dataset.cmd;
+      if(cmd==="bold") wrapSel("**","**");
+      if(cmd==="italic") wrapSel("*","*");
+      if(cmd==="ul") wrapSel("\n- ","");
+      if(cmd==="ol") wrapSel("\n1) ","");
+      if(cmd==="link"){
+        const url = prompt("URL:");
+        if(url) wrapSel("["," ]("+url+")");
+      }
+      if(cmd==="mark") wrapSel("!!","!!");
+      if(cmd==="moda") wrapSel("[[modA|","]]");
+      if(cmd==="ghost"){
+        const url = prompt("URL (invisibile):");
+        if(url) wrapSel("(("+url+"))","");
+      }
+    });
+
+    // toggle editor/preview (sostituzione, non “sotto”)
+    let showPreview = false;
+    $("#btnToggle").addEventListener("click", ()=>{
+      showPreview = !showPreview;
+      $("#preview").style.display = showPreview ? "block":"none";
+      $("#editor").style.display  = showPreview ? "none":"block";
+      $("#btnToggle").textContent = showPreview ? "Editing" : "Preview";
+      if(showPreview) renderPreview($("#editor").value);
+    });
+
+    // primo load “grezzo” (UTF-8 certo) per evitare accenti rotti
+    (async ()=>{
+      try{
+        const raw = await loadUTF8("/TlTr/"+path);
+        $("#editor").value = raw;
+        renderPreview(raw);
+      }catch{ /* ok, l’utente può premere Load dopo aver messo il token */ }
+    })();
+  </script>
 </body>
 </html>

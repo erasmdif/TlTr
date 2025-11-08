@@ -19,11 +19,54 @@ body{
 }
 
 /* HEADER */
-.site-header{position:sticky;top:0;z-index:3;background:linear-gradient(90deg,#eaf4ff,#f9fcff);border-bottom:1px solid #e6eef7;padding:22px}
-.brand{display:flex;align-items:center;gap:20px;max-width:1200px;margin:0 auto}
+.site-header{
+  position:sticky; top:0; z-index:3;
+  background:linear-gradient(90deg,#eaf4ff,#f9fcff);
+  border-bottom:1px solid #e6eef7;
+  padding:22px;
+  /* serve da “ancora” per campanella/pannello */
+}
+.brand{
+  display:flex; align-items:center; gap:20px;
+  max-width:1200px; margin:0 auto;
+  /* spazio per non sovrapporsi alla campanella assoluta */
+  padding-right:72px;
+}
 .brand__logo{width:128px;height:128px;border-radius:50%;object-fit:cover;background:#d9edff;box-shadow:var(--shadow)}
 .brand__sigla{font-weight:900;font-size:clamp(32px,5vw,56px);color:var(--primary)}
 .brand__full{font-size:16px;color:var(--muted)}
+
+/* Campanella in header (assoluta, non crea colonna) */
+/* Campanella in header (senza background-image fisso) */
+#repoBell.bell-btn{
+  position:absolute; right:16px; top:50%; transform:translateY(-50%);
+  width:44px; height:44px; border-radius:50%;
+  border:1px solid #d4d8e3; background:#fff; cursor:pointer;
+  background-size:20px 20px; background-repeat:no-repeat; background-position:center;
+  box-shadow:var(--shadow);
+}
+#repoBell.bell-btn::after{
+  content:attr(data-count); position:absolute; top:-6px; right:-6px;
+  min-width:18px; height:18px; padding:0 4px; border-radius:10px; background:#e53935; color:#fff;
+  font:700 12px/18px system-ui,sans-serif; text-align:center; display:none;
+}
+#repoBell.bell-btn[data-count]:not([data-count="0"])::after{ display:block; }
+
+/* Pannello notifiche: agganciato al fondo dell’header */
+#repoBellPanel.bell-panel{
+  position:absolute;
+  right:12px; top:calc(100% + 8px);
+  width:min(92vw,520px);
+  background:#fff; border:1px solid #e3e6ef; border-radius:12px; padding:10px;
+  box-shadow:0 10px 40px rgba(0,0,0,.18); z-index:20;
+}
+.bell-item{padding:8px;border-bottom:1px solid #f0f2f8}
+.bell-item:last-child{border-bottom:none}
+.bell-item .meta{font-size:12px; color:#667}
+.bell-item a{color:#0b5cab; text-decoration:none}
+.bell-hdr{display:flex; align-items:center; gap:10px; margin-bottom:8px}
+.bell-hdr .grow{flex:1 1 auto}
+.bell-actions .btn{margin-left:6px}
 
 /* SPEED DIAL */
 .speed-dial{position:fixed;left:16px;top:50%;transform:translateY(-50%);z-index:12}
@@ -46,7 +89,7 @@ body{
 #musicFrame{width:100%;height:100%}
 .music-close{position:absolute;right:6px;top:6px;width:28px;height:28px;border-radius:8px;border:1px solid #e6eef7;background:#fff;cursor:pointer;font-size:18px}
 
-/* LAYOUT */
+/* LAYOUT (calendario = colonna destra, invariato) */
 .layout{display:grid;gap:22px;grid-template-columns:1fr 360px;max-width:1200px;padding:22px;margin:0 auto}
 @media (max-width:1040px){.layout{grid-template-columns:1fr}.sidebar{order:-1}}
 
@@ -238,7 +281,7 @@ body{
 .lb-chip.active{background:#eaf3ff;border-color:#9fc7ff;box-shadow:0 0 0 3px rgba(159,199,255,.35)}
 
 .lb__preview{flex:1 1 auto;border:1px solid #e7edf7;background:#fff;border-radius:14px;padding:12px;min-height:220px;overflow:auto}
-.lb-grid{display:grid;gap:14px;grid-auto-flow:row dense} /* packing denso */
+.lb-grid{display:grid;gap:14px;grid-auto-flow:row dense}
 .lb-item{background:#fff;border:1px solid #e6ecf5;border-radius:14px;padding:10px;display:flex;align-items:center;justify-content:center;min-height:86px;cursor:grab;position:relative;transition:box-shadow .15s ease,border-color .15s ease}
 .lb-item.selected{box-shadow:0 0 0 3px var(--ring);border-color:#3a7bd5}
 .lb-item.dragging{opacity:.6}
@@ -259,6 +302,7 @@ body{
   .lb-acc__count{color:#9aaac4}
   #logoBannerDialog .lb__footer{background:linear-gradient(#101217,#101217);border-top-color:#1e2635}
 }
+
 /* --- Event notes (box arancione) --- */
 .preview--note{
   background: linear-gradient(180deg,#fff8ef,#fff3e0);
@@ -280,6 +324,7 @@ body{
   .preview--note .preview-title{ color:#ffcf8a; }
   .note-body{ color:#ffd6a8; }
 }
+
 /* ---------- AVVISI (warning accordion) ---------- */
 .warn-accordion{
   border:1px solid #ffd6a8;
@@ -312,6 +357,7 @@ body{
   .warn-content{ color:#ffd6a8; }
   .warn-mark{ background:#6a4a2f; }
 }
+
 /* Elenco avvisi con punti apribili */
 .warn-content .warn-list{ margin:8px 0 6px 18px; padding:0; }
 .warn-content .warn-list>li{ margin:8px 0; }
@@ -333,3 +379,12 @@ body{
 @media (prefers-color-scheme: dark){
   .warn-content .li-collapsible details>summary::after{ opacity:.85; }
 }
+
+/* Matitina inline (se usata in testo) */
+.edit-pencil{
+  margin-left:.4rem; font-size:18px; text-decoration:none;
+  transition:transform .15s ease; vertical-align:middle
+}
+.edit-pencil:hover{ transform:scale(1.1) rotate(-8deg); }
+
+/* ------------ (fine campanella/matita; la FAB è nello style inline dell'HTML) ------------ */

@@ -975,6 +975,8 @@ async function boot(){
 
   await renderHomepageWarnings();
 
+  setupRepoBell();
+
   // Eventi & calendario subito
   await loadEventi();
   renderCalendar();
@@ -1000,4 +1002,192 @@ async function boot(){
     }
   });
 }
+
+/* =========== REPO BELL (notifiche commit) =========== */
+const GH_OWNER = "erasmdif";
+const GH_REPO  = "TlTr";
+const GH_BRANCH = "main"; // se cambi branch, aggiorna qui
+
+// File/percorsi che vogliamo “sorvegliare”
+const NOTIFY_PATHS = [
+  "static/moduli/info/",    // tutti i .txt di info
+  "static/data/eventi.csv"  // il calendario
+];
+
+const LS_BELL_LAST_SEEN = "tltr:bell:lastSeenISO";
+const LS_BELL_TOKEN     = "tltr:gh:token"; // opzionale per evitare rate-limit
+const LS_BELL_SHOW_ALL = "tltr:bell:showAll";
+
+// Helper: fetch GitHub con token opzionale
+async function gh(endpoint){
+  const token = localStorage.getItem(LS_BELL_TOKEN) || "";
+  const headers = { "Accept":"application/vnd.github+json" };
+  if(token) headers["Authorization"] = `Bearer ${token}`;
+
+  const url = `https://api.github.com${endpoint}`;
+  const r = await fetch(url, { headers });
+  if(r.status === 403){
+    // Rate limit o permessi insufficienti
+    const rem = r.headers.get("X-RateLimit-Remaining");
+    const reset = r.headers.get("X-RateLimit-Reset");
+    const err = new Error("GitHub 403");
+    err.rateRemaining = rem; err.rateReset = reset;
+    throw err;
+  }
+  if(!r.ok) throw new Error(`GitHub ${r.status}`);
+  return r.json();
+}
+
+// Commits per path (limitiamo le chiamate)
+async function commitsForPath(path, perPage=20){
+  // usa il filtro ?path= per evitare di dover caricare i “files” di ogni commit
+  return gh(`/repos/${GH_OWNER}/${GH_REPO}/commits?sha=${encodeURIComponent(GH_BRANCH)}&per_page=${perPage}&path=${encodeURIComponent(path)}`);
+}
+
+// Unione commit da più path (dedup per SHA)
+async function getWatchedCommits(){
+  const arrs = await Promise.all(NOTIFY_PATHS.map(p => commitsForPath(p)));
+  const map = new Map();
+  for(const list of arrs){
+    for(const c of list){ map.set(c.sha, c); }
+  }
+  // ordina per data decrescente
+  return [...map.values()].sort((a,b)=> new Date(b.commit.committer.date) - new Date(a.commit.committer.date));
+}
+
+// UI: rende il pannello
+function renderBellPanel(commits, isRateLimited){
+  const panel = document.getElementById("repoBellPanel");
+  if(!panel) return;
+
+  const lastSeenISO = localStorage.getItem(LS_BELL_LAST_SEEN) || "1970-01-01T00:00:00Z";
+  const lastSeen = new Date(lastSeenISO);
+  const showAll = localStorage.getItem(LS_BELL_SHOW_ALL) === "1";
+
+  const unseen = commits.filter(c => new Date(c.commit.committer.date) > lastSeen);
+  const listToShow = showAll ? commits : unseen;
+
+  // badge: sempre numero non letti
+  const btn = document.getElementById("repoBell");
+  if(btn) btn.dataset.count = String(unseen.length);
+
+  const wantTokenBtn =
+    isRateLimited || /^(localhost|127\.0\.0\.1|0\.0\.0\.0)$/i.test(location.hostname);
+
+  const head = `
+    <div class="bell-hdr" style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+      <div class="grow" style="font-weight:700">Novità</div>
+      <label class="small" style="display:inline-flex;align-items:center;gap:6px">
+        <input id="bellShowAll" type="checkbox" ${showAll ? "checked":""}/>
+        Mostra anche viste
+      </label>
+      <div class="bell-actions" style="display:flex;gap:6px">
+        <button id="bellMarkRead" class="btn btn-sm" type="button">Segna come lette</button>
+        ${wantTokenBtn ? `<button id="bellSetToken" class="btn btn-sm" type="button">Token…</button>` : ""}
+      </div>
+    </div>
+  `;
+
+  const rateWarn = isRateLimited ? `
+    <div class="bell-item" style="background:#fff7f7;border:1px solid #ffd8d8;border-radius:10px">
+      Hai raggiunto il limite anonimo GitHub. Clicca “Token…” e incolla un PAT (solo read) per vedere le notifiche.
+    </div>
+  ` : "";
+
+  const items = listToShow.slice(0, 15).map(c=>{
+    const when = new Date(c.commit.committer.date).toLocaleString("it-IT");
+    const msg  = (c.commit.message||"").split("\n")[0];
+    const author = c.author?.login || c.commit.author?.name || "—";
+    const link = c.html_url;
+
+    // evidenzia non letti
+    const isUnread = new Date(c.commit.committer.date) > lastSeen;
+    const cls = isUnread ? ' style="border-left:3px solid #ff9800;padding-left:6px"' : "";
+
+    return `
+      <div class="bell-item"${cls}>
+        <div><a href="${link}" target="_blank" rel="noopener">${msg}</a></div>
+        <div class="meta">${author} • ${when}</div>
+      </div>
+    `;
+  }).join("");
+
+  panel.innerHTML = head + rateWarn + (items || `<div class="bell-item">Nessuna modifica recente sui file osservati.</div>`);
+
+  // Handlers
+  panel.querySelector("#bellMarkRead")?.addEventListener("click", ()=>{
+    const newest = commits[0]?.commit?.committer?.date || new Date().toISOString();
+    localStorage.setItem(LS_BELL_LAST_SEEN, newest);
+    // aggiorna badge e re-render per togliere l’evidenza
+    renderBellPanel(commits, isRateLimited);
+  });
+
+  panel.querySelector("#bellSetToken")?.addEventListener("click", ()=>{
+    const cur = localStorage.getItem(LS_BELL_TOKEN) || "";
+    const token = prompt(
+      "Incolla un GitHub PAT (read-only su TlTr). Serve solo in sviluppo locale per evitare il rate-limit.",
+      cur
+    );
+    if(token === null) return; // annulla
+    if(token.trim()){
+      localStorage.setItem(LS_BELL_TOKEN, token.trim());
+      alert("Token salvato in questo browser. Ricarica per applicarlo.");
+    }else{
+      localStorage.removeItem(LS_BELL_TOKEN);
+      alert("Token rimosso. Ricarica per applicare.");
+    }
+  });
+
+  panel.querySelector("#bellShowAll")?.addEventListener("change", (e)=>{
+    localStorage.setItem(LS_BELL_SHOW_ALL, e.target.checked ? "1" : "0");
+    renderBellPanel(commits, isRateLimited);
+  });
+}
+
+// Setup completo
+async function setupRepoBell(){
+  const btn = document.getElementById("repoBell");
+  const panel = document.getElementById("repoBellPanel");
+  if(!btn || !panel) return;
+
+  // icona dinamica (niente path assoluto che rompe in locale)
+  try{
+    const bellPNG = ASSETS.iconsBase + "bell.png";
+    const bellSVG = ASSETS.iconsBase + "bell.svg";
+    const test = new Image();
+    test.onload  = () => { btn.style.backgroundImage = `url("${bellPNG}")`; };
+    test.onerror = () => { btn.style.backgroundImage = `url("${bellSVG}")`; };
+    test.src = bellPNG;
+  }catch{}
+
+  let isRateLimited = false;
+  let commits = [];
+  try{
+    commits = await getWatchedCommits();
+  }catch(e){
+    if(e && e.message === "GitHub 403"){ isRateLimited = true; }
+  }
+
+  // prepara pannello e badge
+  renderBellPanel(commits, isRateLimited);
+
+  // toggle apertura
+  let open = false;
+  btn.addEventListener("click", ()=>{
+    open = !open;
+    panel.hidden = !open;
+    if(open){
+      // quando lo apri, aggiorno il conteggio “non letti” rispetto al lastSeen
+      renderBellPanel(commits, isRateLimited);
+    }
+  });
+
+  // chiudi cliccando fuori
+  document.addEventListener("click", (e)=>{
+    if(!open) return;
+    if(e.target === btn || panel.contains(e.target)) return;
+    open = false; panel.hidden = true;
+  });
+}
+
 document.addEventListener("DOMContentLoaded", boot);
