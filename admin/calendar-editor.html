@@ -27,11 +27,8 @@
     input[type="text"],input[type="time"],input[type="date"],select,textarea{
       border:1px solid var(--bd);border-radius:8px;padding:8px 10px;background:#fff;width:100%;
     }
-    /* niente altezza enorme per tutte le textarea */
     textarea{resize:vertical}
-    /* note restano comode */
-    #f_note{min-height:120px}
-    /* titolo evento ~3 righe */
+    /* Titolo evento ~3 righe */
     #f_evento{min-height:3.4em; line-height:1.2}
 
     .row{max-width:1200px;margin:0 auto;padding:14px;display:grid;grid-template-columns:340px 1fr;gap:14px}
@@ -71,6 +68,17 @@
     #map{height:100%}
     .row-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:10px}
 
+    /* Toggle chips (tipo/presenza/sicuro) */
+    .tog-row{display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap}
+    .tog-group{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+    .tog-label{font-size:.9rem;color:#3a4a5a;font-weight:700;margin-right:4px}
+    .tog{display:inline-flex;align-items:center;gap:6px;border:1px solid #dbe4f0;background:#fff;border-radius:999px;padding:6px 10px;cursor:pointer}
+    .tog img{width:16px;height:16px;object-fit:contain;display:block}
+    .tog.is-active{box-shadow:0 0 0 2px rgba(255,127,0,.25); border-color:#ffbc80; background:#fff8f0}
+    .tog[data-value="si"]{border-color:#cdebd6}
+    .tog[data-value="no"]{border-color:#ffd0d0}
+    .tog[data-value="forse"]{border-color:#d7e8ff}
+
     /* Place card */
     .place-card{border:1px dashed var(--bd); border-radius:10px; padding:10px; margin-top:12px; background:#ffffff}
     .place-card .section-title{font-weight:700; color:#384a5e; margin-bottom:6px}
@@ -98,7 +106,7 @@
   </header>
 
   <div class="row">
-    <!-- SINISTRA: calendario + lista eventi del periodo/giorno -->
+    <!-- SINISTRA: calendario + lista -->
     <section class="card">
       <div class="head">Calendario</div>
       <div class="body">
@@ -115,42 +123,34 @@
       </div>
     </section>
 
-    <!-- DESTRA: form evento -->
+    <!-- DESTRA: form -->
     <section class="card">
       <div class="head">Evento</div>
       <div class="body">
-        <!-- Dati principali -->
+        <!-- Titolo -->
         <div class="grid">
           <div style="grid-column:1/-1">
             <label>Titolo evento</label>
             <textarea id="f_evento" placeholder="Titolo evento"></textarea>
           </div>
-          <div>
-            <label>Tipo</label>
-            <select id="f_tipo">
-              <option value="evento">evento</option>
-              <option value="convegno">convegno</option>
-              <option value="seminario">seminario</option>
-              <option value="cena">cena</option>
-            </select>
+        </div>
+
+        <!-- Toggles (tipo/presenza/sicuro) -->
+        <div class="tog-row" style="margin:6px 0 4px">
+          <div class="tog-group" id="groupTipo" role="radiogroup" aria-label="Tipo">
+            <span class="tog-label">Tipo:</span>
+            <!-- generati via JS con icone -->
           </div>
-          <div>
-            <label>Presenza</label>
-            <select id="f_presenza">
-              <option value="">—</option>
-              <option value="si">si</option>
-              <option value="forse">forse</option>
-              <option value="no">no</option>
-            </select>
+          <div class="tog-group" id="groupPresenza" role="radiogroup" aria-label="Presenza">
+            <span class="tog-label">Presenza:</span>
           </div>
-          <div>
-            <label>Sicuro</label>
-            <select id="f_sicuro">
-              <option value="">—</option>
-              <option value="si">si</option>
-              <option value="no">no</option>
-            </select>
+          <div class="tog-group" id="groupSicuro" role="radiogroup" aria-label="Sicuro">
+            <span class="tog-label">Sicuro:</span>
           </div>
+        </div>
+
+        <!-- Date & orari -->
+        <div class="grid" style="margin-top:6px">
           <div>
             <label>Dal</label>
             <input id="f_date_from" type="date">
@@ -193,7 +193,7 @@
           <textarea id="f_note" placeholder="Testo note (supporta marcatori semplici)"></textarea>
         </div>
 
-        <!-- Luogo: card separata -->
+        <!-- Luogo -->
         <div class="place-card">
           <div class="section-title">Luogo</div>
 
@@ -287,6 +287,7 @@
     const PATH_LUOGHI="static/data/luoghi.geojson";
     const PATH_COMUNI="static/data/comuni.geojson";
     const PATH_MEDIA ="static/locandine_programmi/";
+    const ICON_BASE = "/TlTr/static/images/icons/";
 
     /* ====== Utils ====== */
     const $=(s,r=document)=>r.querySelector(s);
@@ -388,6 +389,53 @@
     let selStartKey=null, selEndKey=null;
     let justFinalizedDrag=false;
 
+    /* ====== Toggles ====== */
+    const TIPO_LIST = ["evento","convegno","seminario","cena","altro"];
+    const PRESENZA_LIST = ["si","forse","no"];
+    const SICURO_LIST = ["si","no"];
+
+    function makeChip(value, groupName){
+      const b=document.createElement("button");
+      b.type="button";
+      b.className="tog";
+      b.dataset.value=value;
+      // icona se presente
+      const img=document.createElement("img");
+      img.alt=value; img.loading="lazy"; img.decoding="async";
+      img.src = ICON_BASE + encodeURIComponent(value + ".png");
+      img.onerror = ()=>{ img.style.display="none"; }; // icona opzionale
+      const span=document.createElement("span"); span.textContent=value;
+      b.append(img, span);
+      b.addEventListener("click", ()=>{
+        const group = b.parentElement;
+        group.querySelectorAll(".tog").forEach(x=>x.classList.toggle("is-active", x===b));
+        // scrivi hidden value
+        $("#f_"+groupName).value = value;
+      });
+      return b;
+    }
+    function buildToggleGroups(){
+      // hidden per i valori
+      ["tipo","presenza","sicuro"].forEach(name=>{
+        let h=$("#f_"+name); if(!h){ h=document.createElement("input"); h.type="hidden"; h.id="f_"+name; document.body.appendChild(h); }
+      });
+
+      const gT=$("#groupTipo"); gT.querySelectorAll(".tog")?.forEach(n=>n.remove());
+      TIPO_LIST.forEach(v=>gT.appendChild(makeChip(v,"tipo")));
+
+      const gP=$("#groupPresenza"); gP.querySelectorAll(".tog")?.forEach(n=>n.remove());
+      PRESENZA_LIST.forEach(v=>gP.appendChild(makeChip(v,"presenza")));
+
+      const gS=$("#groupSicuro"); gS.querySelectorAll(".tog")?.forEach(n=>n.remove());
+      SICURO_LIST.forEach(v=>gS.appendChild(makeChip(v,"sicuro")));
+    }
+    function setToggle(groupSelector, value){
+      const group=$(groupSelector); if(!group) return;
+      group.querySelectorAll(".tog").forEach(b=>{
+        b.classList.toggle("is-active", (b.dataset.value||"")===value);
+      });
+    }
+
     /* ====== Calendar ====== */
     const IT_DOW=["Lun","Mar","Mer","Gio","Ven","Sab","Dom"];
     const IT_MONTHS=["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
@@ -451,14 +499,14 @@
           applySelectionToForm();
           renderCalendar(); renderDayList();
         });
-        // Drag end on arrival click (mouseup dentro cella)
+        // Drag end su data di arrivo
         cell.addEventListener("mouseup",(e)=>{
           if(!dragActive) return;
           selEndKey=k; dragActive=false; justFinalizedDrag=true;
           applySelectionToForm();
           renderCalendar(); renderDayList();
         });
-        // Click singolo: solo se non stiamo appena chiudendo un drag
+        // Click singolo (se non è appena finito un drag)
         cell.addEventListener("click",(e)=>{
           if(justFinalizedDrag){ justFinalizedDrag=false; return; }
           if(dragActive){ e.preventDefault(); return; }
@@ -470,8 +518,7 @@
         grid.appendChild(cell);
       }
     }
-
-    // fallback: se rilasci fuori dalla griglia, termina drag
+    // fallback: rilascio fuori => chiudi drag
     document.addEventListener("mouseup",()=>{ dragActive=false; });
 
     function applySelectionToForm(){
@@ -529,6 +576,7 @@
       renderCalendar();
       $("#dayList").innerHTML='<div class="muted">Seleziona un giorno o trascina un intervallo</div>';
       clearForm();
+      buildToggleGroups();
     }
 
     /* ====== Form bind ====== */
@@ -551,13 +599,22 @@
       $("#f_locandina_name").textContent=""; $("#f_programma_name").textContent="";
       $("#mapWrap").hidden=true;
       if(mapMarker){ map.removeLayer(mapMarker); mapMarker=null; }
+      // toggles
+      setToggle("#groupTipo","evento");
+      setToggle("#groupPresenza","");
+      setToggle("#groupSicuro","");
     }
 
     function loadEventIntoForm(ev){
       $("#f_evento").value=ev.evento||"";
-      $("#f_tipo").value=(ev.tipo||"").toLowerCase()||"evento";
+      const tipo=(ev.tipo||"").toLowerCase()||"evento";
+      $("#f_tipo").value=tipo;
       $("#f_presenza").value=normalizePresenza(ev.presenza||"");
       $("#f_sicuro").value=(ev.sicuro||"").toLowerCase();
+      setToggle("#groupTipo", $("#f_tipo").value);
+      setToggle("#groupPresenza", $("#f_presenza").value);
+      setToggle("#groupSicuro", $("#f_sicuro").value);
+
       const f=parseMDY2Y(ev.date_from); const t=parseMDY2Y(ev.date_to)||f;
       $("#f_date_from").value=f?toInputDate(f):"";
       $("#f_date_to").value=t?toInputDate(t):"";
@@ -585,7 +642,6 @@
 
     function collectForm(){
       return {
-        // event title: niente \n nel CSV
         evento: $("#f_evento").value.trim().replace(/\s*\n\s*/g, " "),
         tipo: ($("#f_tipo").value||"").trim().toLowerCase(),
         presenza: normalizePresenza($("#f_presenza").value||""),
@@ -605,45 +661,54 @@
 
     /* ====== Map ====== */
     let map=null, mapMarker=null, cityLayer=null;
+
+    // rende la mappa visibile e risolve quando è pronta a ricevere fit/setView
     function ensureMapVisible(){
-      $("#mapWrap").hidden=false;
-      setTimeout(()=>{
-        if(!map){
-          map=L.map("map",{zoomControl:true, scrollWheelZoom:true});
-          L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19, attribution:"&copy; OpenStreetMap"}).addTo(map);
-          map.on("click",(e)=>{
-            const {lat,lng}=e.latlng;
-            $("#f_lat").value=lat.toFixed(12);
-            $("#f_lon").value=lng.toFixed(12);
-            if(mapMarker){ mapMarker.setLatLng(e.latlng); }
-            else { mapMarker=L.marker(e.latlng).addTo(map); }
-          });
-          map.setView([41.125,16.866],6);
-        }
-        setTimeout(()=>map.invalidateSize(),100);
-      },40);
+      return new Promise(resolve=>{
+        $("#mapWrap").hidden=false;
+        const init=()=>{
+          if(!map){
+            map=L.map("map",{zoomControl:true, scrollWheelZoom:true});
+            L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19, attribution:"&copy; OpenStreetMap"}).addTo(map);
+            // clic per scegliere coordinate
+            map.on("click",(e)=>{
+              const {lat,lng}=e.latlng;
+              $("#f_lat").value=lat.toFixed(12);
+              $("#f_lon").value=lng.toFixed(12);
+              if(mapMarker){ mapMarker.setLatLng(e.latlng); }
+              else { mapMarker=L.marker(e.latlng).addTo(map); }
+            });
+            map.setView([41.125,16.866],6);
+            setTimeout(()=>{ map.invalidateSize(); resolve(map); }, 60);
+          }else{
+            setTimeout(()=>{ map.invalidateSize(); resolve(map); }, 30);
+          }
+        };
+        // lascia un micro-turno al layout per mostrare #mapWrap
+        setTimeout(init, 0);
+      });
     }
 
-    $("#btnMapPick").addEventListener("click", ensureMapVisible);
+    $("#btnMapPick").addEventListener("click", ()=>{ ensureMapVisible(); });
     $("#btnClearPoint").addEventListener("click", ()=>{
       $("#f_lat").value=""; $("#f_lon").value="";
       if(mapMarker){ map.removeLayer(mapMarker); mapMarker=null; }
     });
 
-    // Zoom sul comune (intero poligono), nessun marker
-    $("#f_citta").addEventListener("input", ()=>{
+    // Zoom sul comune (intero poligono), PRIMO tentativo incluso (no marker)
+    $("#f_citta").addEventListener("input", async ()=>{
       const name=$("#f_citta").value.trim();
       if(!name) return;
       const feat=(COMUNI?.features||[]).find(f=>normalizeCity(f.properties?.nome_comune)===normalizeCity(name));
       if(!feat) return;
-      ensureMapVisible();
-      if(cityLayer){ map.removeLayer(cityLayer); cityLayer=null; }
-      cityLayer = L.geoJSON(feat,{style:{color:"#3a7bd5", weight:2, fillOpacity:0.05}}).addTo(map);
-      try{ map.fitBounds(cityLayer.getBounds(),{padding:[30,30]}); }catch{}
+      const m=await ensureMapVisible();
+      if(cityLayer){ m.removeLayer(cityLayer); cityLayer=null; }
+      cityLayer = L.geoJSON(feat,{style:{color:"#3a7bd5", weight:2, fillOpacity:0.05}}).addTo(m);
+      try{ m.fitBounds(cityLayer.getBounds(),{padding:[30,30]}); }catch{}
     });
 
-    // Riempie da luoghi.geojson
-    $("#f_luogo").addEventListener("input", ()=>{
+    // Riempie da luoghi.geojson + zoom “più largo” (13) sul punto
+    $("#f_luogo").addEventListener("input", async ()=>{
       const val=$("#f_luogo").value.trim(); if(!val) return;
       const feat=(LUOGHI_FC.features||[]).find(f=>(f.properties?.nome||"")===val);
       if(!feat) return;
@@ -651,9 +716,9 @@
       const [x,y]=feat.geometry?.coordinates||[];
       if(x!=null && y!=null){
         $("#f_lon").value=x; $("#f_lat").value=y;
-        ensureMapVisible();
-        if(mapMarker){ mapMarker.setLatLng([y,x]); } else { mapMarker=L.marker([y,x]).addTo(map); }
-        map.setView([y,x],15);
+        const m=await ensureMapVisible();
+        if(mapMarker){ mapMarker.setLatLng([y,x]); } else { mapMarker=L.marker([y,x]).addTo(m); }
+        m.setView([y,x], 13); // zoom più “aperto”
       }
     });
 
@@ -761,7 +826,7 @@
     const savedToken=sessionStorage.getItem("gh_pat"); if(savedToken) $("#ghToken").value=savedToken;
     $("#ghToken").addEventListener("input",e=>sessionStorage.setItem("gh_pat", e.target.value));
 
-    $("#btnLoad").addEventListener("click", loadAll);
+    $("#btnLoad").addEventListener("click", async ()=>{ await loadAll(); });
     $("#btnNew").addEventListener("click", ()=>{
       clearForm();
       if(selStartKey){
@@ -777,7 +842,7 @@
     $("#nextMonth").addEventListener("click",()=>{ monthCursor.setUTCMonth(monthCursor.getUTCMonth()+1); renderCalendar(); renderDayList(); });
 
     // primo load
-    loadAll().catch(()=>{ /* l’utente potrà premere Load dopo aver messo il token */ });
+    (async ()=>{ buildToggleGroups(); await loadAll(); })().catch(()=>{});
   </script>
 </body>
 </html>

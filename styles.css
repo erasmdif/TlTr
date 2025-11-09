@@ -387,4 +387,15 @@ body{
 }
 .edit-pencil:hover{ transform:scale(1.1) rotate(-8deg); }
 
-/* ------------ (fine campanella/matita; la FAB è nello style inline dell'HTML) ------------ */
+/* Quick edit bar (aperta dalla matita) */
+.quick-edit-bar{
+  position:fixed; left:50%; top:12px; transform:translateX(-50%);
+  display:flex; gap:10px; z-index:1000; padding:8px 10px;
+  background:#ffffffcc; backdrop-filter:saturate(1.1) blur(6px);
+  border:1px solid #e3e6ef; border-radius:12px; box-shadow:0 8px 30px rgba(0,0,0,.1);
+}
+.quick-edit-btn{
+  width:44px; height:44px; border:1px solid #dbe4f0; background:#fff; border-radius:10px;
+  display:flex; align-items:center; justify-content:center; text-decoration:none; font-size:22px;
+}
+.quick-edit-btn:hover{ box-shadow:0 2px 10px rgba(0,0,0,.08); }
