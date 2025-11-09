@@ -1190,46 +1190,4 @@ async function setupRepoBell(){
   });
 }
 
-function setupEditPencil(){
-  const pencil = document.querySelector(".edit-pencil"); // esiste già nei tuoi template
-  if(!pencil) return;
-
-  // non mandare più al vecchio URL
-  pencil.setAttribute("href", "#");
-  pencil.addEventListener("click", (e)=>{
-    e.preventDefault();
-    toggleQuickEditBar();
-  });
-}
-function toggleQuickEditBar(){
-  let bar = document.getElementById("quickEditBar");
-  if(bar){ bar.remove(); return; }
-  bar = document.createElement("div");
-  bar.id = "quickEditBar";
-  bar.className = "quick-edit-bar";
-  bar.innerHTML = `
-    <a class="quick-edit-btn" href="https://erasmdif.github.io/TlTr/admin/calendar-editor.html" title="Aggiorna il calendario">🗓️</a>
-    <a class="quick-edit-btn" href="https://erasmdif.github.io/TlTr/admin/lite-editor.html" title="Aggiorna la bacheca">📝</a>
-  `;
-  document.body.appendChild(bar);
-
-  // chiudi cliccando fuori
-  setTimeout(()=>{ // lascia inserire nel DOM
-    const close = (ev)=>{
-      if(!bar) return;
-      if(bar.contains(ev.target)) return;
-      bar.remove();
-      document.removeEventListener("click", close);
-    };
-    document.addEventListener("click", close);
-  },0);
-}
-
-// dentro boot()
-async function boot(){
-  // ...
-  setupEditPencil();
-  // ...
-}
-
 document.addEventListener("DOMContentLoaded", boot);
