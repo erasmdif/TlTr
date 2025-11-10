@@ -286,7 +286,7 @@ function renderConvenzionateAccordion(){
 
 /* ---------- MODULI ---------- */
 const MOD_FILENAME={A:"Modulo_A.txt",R:"Modulo_R.txt",B:"Modulo_B.txt",S:"Modulo_S.txt"};
-const MODULE_FILES={A:["modulo_A.docx"],R:["modulo_R.dotx","modulo_Rdotx"],B:["modulo_B.dotx"],S:["modulo_S.dotx"]};
+const MODULE_FILES={A:["modulo_A.docx"],R:["modulo_R.dotx","modulo_Rdotx"],B:["modulo_B.pdf"],S:["modulo_S.dotx"]};
 
 async function loadTxt(u){ const r=await fetch(ver(u)); if(!r.ok) throw 0; return r.text(); }
 
@@ -977,6 +977,8 @@ async function boot(){
 
   setupRepoBell();
 
+  setupEditPencil();
+
   // Eventi & calendario subito
   await loadEventi();
   renderCalendar();
@@ -1188,6 +1190,74 @@ async function setupRepoBell(){
     if(e.target === btn || panel.contains(e.target)) return;
     open = false; panel.hidden = true;
   });
+}
+
+function setupEditPencil(){
+  // prendi sia .edit-fab sia .edit-pencil per compatibilità
+  const pencil = document.querySelector(".edit-fab, .edit-pencil, a[href$='/admin/lite-editor.html']");
+  if(!pencil) return;
+
+  // salva l'href originale (se vuoi ripristinarlo in futuro)
+  const oldHref = pencil.getAttribute("href") || "";
+  pencil.dataset.oldHref = oldHref;
+
+  // disattiva il link e intercetta il click
+  pencil.setAttribute("href", "#");
+  pencil.setAttribute("role", "button");
+  pencil.setAttribute("aria-label", "Apri scorciatoie di modifica");
+
+  pencil.addEventListener("click", (e)=>{
+    e.preventDefault();
+    e.stopPropagation();
+    toggleQuickEditBar();
+  });
+}
+function toggleQuickEditBar(){
+  // trova la matita (FAB)
+  const pencil = document.querySelector(".edit-fab, .edit-pencil");
+  if(!pencil) return;
+
+  // se esiste già -> rimuovi (toggle off)
+  let bar = document.getElementById("quickEditBar");
+  if(bar){ bar.remove(); return; }
+
+  // crea barra
+  bar = document.createElement("div");
+  bar.id = "quickEditBar";
+  bar.innerHTML = `
+    <a class="quick-edit-btn" href="https://erasmdif.github.io/TlTr/admin/calendar-editor.html" title="Aggiorna il calendario">🗓️</a>
+    <a class="quick-edit-btn" href="https://erasmdif.github.io/TlTr/admin/lite-editor.html" title="Aggiorna la bacheca">📝</a>
+  `;
+  document.body.appendChild(bar);
+
+  // posiziona sopra la matita in modo robusto (calcolato)
+  const positionBar = () => {
+    const r = pencil.getBoundingClientRect();
+    const fromRight  = Math.max(0, window.innerWidth  - r.right);
+    const fromBottom = Math.max(0, window.innerHeight - r.top); // spazio da bottom fino al bordo superiore della matita
+    bar.style.position = "fixed";
+    bar.style.right  = fromRight + "px";
+    bar.style.bottom = (fromBottom + 8) + "px"; // 8px di gap sopra la matita
+    bar.style.display = "flex";
+    bar.style.flexDirection = "column";
+    bar.style.gap = "8px";
+    bar.style.zIndex = "10000";
+  };
+  positionBar();
+  window.addEventListener("resize", positionBar, { passive:true });
+  // (se la matita cambia dimensione dinamicamente, potresti richiamare positionBar anche onscroll)
+
+  // chiudi cliccando fuori
+  setTimeout(()=>{ // lascia inserire nel DOM
+    const close = (ev)=>{
+      if(!bar) return;
+      if(bar.contains(ev.target) || pencil.contains(ev.target)) return;
+      bar.remove();
+      document.removeEventListener("click", close);
+      window.removeEventListener("resize", positionBar);
+    };
+    document.addEventListener("click", close);
+  },0);
 }
 
 document.addEventListener("DOMContentLoaded", boot);

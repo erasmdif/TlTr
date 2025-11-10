@@ -387,15 +387,28 @@ body{
 }
 .edit-pencil:hover{ transform:scale(1.1) rotate(-8deg); }
 
-/* Quick edit bar (aperta dalla matita) */
-.quick-edit-bar{
-  position:fixed; left:50%; top:12px; transform:translateX(-50%);
-  display:flex; gap:10px; z-index:1000; padding:8px 10px;
-  background:#ffffffcc; backdrop-filter:saturate(1.1) blur(6px);
-  border:1px solid #e3e6ef; border-radius:12px; box-shadow:0 8px 30px rgba(0,0,0,.1);
+/* Barra rapida ancorata alla matita (in colonna, sopra) */
+#quickEditBar{
+  position: fixed;
+  right: 16px;                 /* allineata alla matita (che è right:16px) */
+  bottom: 72px;                /* 16 (gap) + 48 (h matita) + 8 (spazio) ≈ 72 */
+  display: flex;
+  flex-direction: column;      /* verticale */
+  gap: 8px;
+  z-index: 10000;
+  pointer-events: auto;
 }
+
+/* Bottoni tondi */
 .quick-edit-btn{
-  width:44px; height:44px; border:1px solid #dbe4f0; background:#fff; border-radius:10px;
-  display:flex; align-items:center; justify-content:center; text-decoration:none; font-size:22px;
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  background: #fff;
+  display: inline-flex; align-items:center; justify-content:center;
+  text-decoration: none;
+  box-shadow: 0 8px 22px rgba(0,0,0,.22);
+  border: 1px solid rgba(0,0,0,.08);
+  transition: transform .15s ease, box-shadow .15s ease;
 }
-.quick-edit-btn:hover{ box-shadow:0 2px 10px rgba(0,0,0,.08); }
+.quick-edit-btn:hover{ transform: translateY(-2px); box-shadow: 0 10px 26px rgba(0,0,0,.28); }
+
