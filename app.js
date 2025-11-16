@@ -285,26 +285,65 @@ function renderConvenzionateAccordion(){
 }
 
 /* ---------- MODULI ---------- */
-const MOD_FILENAME={A:"Modulo_A.txt",R:"Modulo_R.txt",B:"Modulo_B.txt",S:"Modulo_S.txt"};
-const MODULE_FILES={A:["modulo_A.docx"],R:["modulo_R.dotx","modulo_Rdotx"],B:["modulo_B.pdf"],S:["modulo_S.dotx"]};
+const MOD_FILENAME = {
+  A:"Modulo_A.txt",
+  R:"Modulo_R.txt",
+  B:"Modulo_B.txt",
+  S:"Modulo_S.txt"
+};
+
+const MODULE_FILES = {
+  A:["modulo_A.docx"],
+  R:["modulo_R.dotx","modulo_Rdotx"],
+  B:["modulo_B.pdf"],
+  S:["modulo_S.dotx"],
+  REG:["Regolamento.interno_XLI ciclo.pdf"] // <-- qui il tuo file
+};
 
 async function loadTxt(u){ const r=await fetch(ver(u)); if(!r.ok) throw 0; return r.text(); }
 
 async function openModuleInfoByKey(k, opts = {}){
-  const title={A:"Modulo A – Richiesta di autorizzazione preventiva",R:"Modulo R – Dati personali e sulla missione",B:"Modulo B – Rendicontazione a rientro",S:"Modulo S – Attestazione sede di servizio"}[k]||"Informazioni";
-  $("#moduleInfoTitle").textContent=title;
+  // Caso speciale: Regolamento XLI
+  if (k === "REG") {
+    $("#moduleInfoTitle").textContent = "Regolamento interno – XLI ciclo";
+    $("#moduleInfoBody").textContent =
+      "Seguiranno eventuali delucidazioni su punti poco chiari.";
+    $("#generalNotes").textContent = "";
+
+    // opzionale: carica comunque le sedi convenzionate come per gli altri
+    if (!ENTI.length) {
+      try { await loadEnti(); } catch {}
+    }
+    renderConvenzionateAccordion();
+
+    openDialog($("#moduleInfoDialog"));
+    return;
+  }
+
+  // Resto: moduli A / R / B / S
+  const title = {
+    A:"Modulo A – Richiesta di autorizzazione preventiva",
+    R:"Modulo R – Dati personali e sulla missione",
+    B:"Modulo B – Rendicontazione a rientro",
+    S:"Modulo S – Attestazione sede di servizio"
+  }[k] || "Informazioni";
+
+  $("#moduleInfoTitle").textContent = title;
   try{
     const [spec,generali] = await Promise.all([
-      loadTxt(ASSETS.infoBase+MOD_FILENAME[k]),
-      loadTxt(ASSETS.infoBase+"info_generali.txt")
+      loadTxt(ASSETS.infoBase + MOD_FILENAME[k]),
+      loadTxt(ASSETS.infoBase + "info_generali.txt")
     ]);
     $("#moduleInfoBody").innerHTML = formatInfoText(spec);
     $("#generalNotes").innerHTML   = formatInfoText(generali);
   }catch{
-    $("#moduleInfoBody").textContent="Impossibile caricare il testo."; $("#generalNotes").textContent="";
+    $("#moduleInfoBody").textContent = "Impossibile caricare il testo.";
+    $("#generalNotes").textContent   = "";
   }
-  // Assicura i loghi convenzionati solo quando serve
-  if(!ENTI.length){ try{ await loadEnti(); } catch{} }
+
+  if (!ENTI.length) {
+    try { await loadEnti(); } catch {}
+  }
   renderConvenzionateAccordion();
 
   openDialog($("#moduleInfoDialog"));
