@@ -372,9 +372,26 @@ async function downloadModuleByKey(k){
   alert("File non trovato per il modulo "+k);
 }
 function setupModules(){
-  $$(".info-btn").forEach(b=>b.addEventListener("click",()=>openModuleInfoByKey(b.dataset.module)));
-  $$(".doc-button").forEach(b=>b.addEventListener("click",()=>downloadModuleByKey(b.dataset.modkey)));
+  // pulsanti "i" per le info sui moduli
+  $$(".info-btn").forEach(b=>{
+    b.addEventListener("click", ()=>openModuleInfoByKey(b.dataset.module));
+  });
+
+  // pulsanti documento / cartella
+  $$(".doc-button").forEach(b=>{
+    const driveUrl = b.dataset.driveUrl;
+    if (driveUrl) {
+      // caso speciale: cartella Drive
+      b.addEventListener("click", ()=>{
+        window.open(driveUrl, "_blank", "noopener");
+      });
+    } else {
+      // moduli normali: usa la logica di download esistente
+      b.addEventListener("click", ()=>downloadModuleByKey(b.dataset.modkey));
+    }
+  });
 }
+
 
 /* ---------- LOGHI UTILI (lazy) ---------- */
 let logosFiltered=[], logosPage=0;

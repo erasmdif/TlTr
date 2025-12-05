@@ -7,6 +7,8 @@
 { "type": "Feature", "properties": { "id": null, "indirizzo": "Via Monteoliveto 3, Napoli", "nome": "Palazzo Gravina" }, "geometry": { "type": "Point", "coordinates": [ 14.251206791361842, 40.845183331092016 ] } },
 { "type": "Feature", "properties": { "id": null, "indirizzo": "Via Ostiense, 234, 00146 Roma RM", "nome": "Università degli Studi Roma Tre - Dipartimento di Filosofia Comunicazione e Spettacolo" }, "geometry": { "type": "Point", "coordinates": [ 12.475348713389611, 41.850677230471788 ] } },
 { "type": "Feature", "properties": { "id": null, "indirizzo": "Via del Porto Fluviale, 5/F, 00154 Roma", "nome": "Ristorante Angelina al Porto Fluviale" }, "geometry": { "type": "Point", "coordinates": [ 12.479284211661163, 41.872312502914546 ] } },
-{ "type": "Feature", "properties": { "id": null, "indirizzo": "Piazza San Domenico Maggiore", "nome": "Palazzo Petrucci Pizzeria" }, "geometry": { "type": "Point", "coordinates": [ 14.254561206259252, 40.848546406701139 ] } }
+{ "type": "Feature", "properties": { "id": null, "indirizzo": "Piazza San Domenico Maggiore", "nome": "Palazzo Petrucci Pizzeria" }, "geometry": { "type": "Point", "coordinates": [ 14.254561206259252, 40.848546406701139 ] } },
+{ "type": "Feature", "properties": { "id": null, "indirizzo": "Via Duomo 219", "nome": "Palazzo Santa Maria Porta Coeli" }, "geometry": { "type": "Point", "coordinates": [ 14.260139998663034, 40.85066295814406 ] } },
+{ "type": "Feature", "properties": { "id": null, "indirizzo": "P.za S. Domenico Maggiore", "nome": "Palazzo Corigliano" }, "geometry": { "type": "Point", "coordinates": [ 14.254561206259252, 40.848546406701139 ] } }
 ]
 }

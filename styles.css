@@ -412,3 +412,9 @@ body{
 }
 .quick-edit-btn:hover{ transform: translateY(-2px); box-shadow: 0 10px 26px rgba(0,0,0,.28); }
 
+.doc-icon--folder {
+  background-image: url("./static/images/icons/folder.png");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
